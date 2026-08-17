@@ -1,0 +1,136 @@
+/*
+ * ESP32-P4 hypervisor guest — PHASE 4  (the milestone)
+ *
+ * Adds: emulated PLIC + emulated 16550 with working input.
+ *
+ * Expected result: full boot to a shell prompt you can type into.
+ *
+ * New traps for this phase:
+ *
+ *   PLIC at 0x0c000000:
+ *     0x000000 + 4*n   priority of source n        (accept, ignore)
+ *     0x001000         pending bitmap              (read from shadow)
+ *     0x002000         enable bitmap, context 0    (store to shadow)
+ *     0x200000         threshold, context 0        (accept, ignore)
+ *     0x200004         claim/complete, context 0
+ *                        read  -> highest pending enabled source, clears pending
+ *                        write -> completion, re-arm that source
+ *
+ *   16550 at 0x10000000 (reg-shift 0, so one byte per register):
+ *     0x00 RBR/THR  read = next RX byte  |  write = TX byte
+ *     0x01 IER      bit0 = RX data available int, bit1 = TX empty int
+ *     0x02 IIR      read: 0x04 = RX ready, 0x02 = TX empty, 0x01 = none
+ *     0x03 LCR      accept and ignore (DLAB handling optional)
+ *     0x05 LSR      bit0 = RX data ready, bit5 = THR empty, bit6 = TX idle
+ *                   Always report bits 5 and 6 set: TX never blocks.
+ *
+ * The UART is what makes this phase different from every earlier one:
+ * it needs INPUT, which needs an interrupt, which is why the PLIC has to
+ * work first. When a byte lands on the real UART, set LSR bit 0, mark
+ * source 10 pending in the shadow PLIC, and inject MEIP.
+ */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "espressif,esp32p4";
+	model = "ESP32-P4 hypervisor guest";
+
+	chosen {
+		/*
+		 * earlycon  -> output before drivers probe
+		 * console=  -> hand over to the real 8250 driver once it probes
+		 * keep_bootcon -> keep BOTH active, so if the handover breaks
+		 *                 you still see output. Drop it once stable.
+		 */
+		bootargs = "earlycon=uart8250,mmio,0x10000000 console=ttyS0,115200 rdinit=/sbin/init keep_bootcon";
+		stdout-path = &uart0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <16000000>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			status = "okay";
+
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c",
+					       "zicsr", "zifencei";
+			riscv,isa = "rv32imac";
+			clock-frequency = <360000000>;
+
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	memory@48000000 {
+		device_type = "memory";
+		reg = <0x48000000 0x01000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0", "riscv,clint0";
+			reg = <0x02000000 0x00010000>;
+			interrupts-extended = <&cpu0_intc 3>,
+					      <&cpu0_intc 7>;
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x00400000>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+
+			/*
+			 * riscv,ndev = highest interrupt source number.
+			 * Keep it small — it sizes the driver's tables and
+			 * bounds how much shadow state you must maintain.
+			 */
+			riscv,ndev = <31>;
+
+			/* one context: hart 0, M-mode external (bit 11) */
+			interrupts-extended = <&cpu0_intc 11>;
+		};
+
+		uart0: serial@10000000 {
+			compatible = "ns16550a";
+			reg = <0x10000000 0x100>;
+
+			/* one byte between registers — simplest to emulate */
+			reg-shift = <0>;
+			reg-io-width = <1>;
+
+			/*
+			 * Baud is fiction: your monitor forwards bytes to the
+			 * real UART0, which the ROM already set to 115200.
+			 * This value only feeds the divisor Linux computes and
+			 * then writes to registers you ignore.
+			 */
+			clock-frequency = <3686400>;
+			current-speed = <115200>;
+
+			interrupt-parent = <&plic>;
+			interrupts = <10>;
+
+			status = "okay";
+		};
+	};
+};

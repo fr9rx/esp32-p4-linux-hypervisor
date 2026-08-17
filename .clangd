@@ -1,0 +1,13 @@
+# clangd searches for compile_commands.json in the source file's directory and
+# its ancestors -- it never descends into build/. Point it there explicitly.
+CompileFlags:
+  CompilationDatabase: build
+
+  # GCC-only flags that clang does not implement. Left in place, clangd can
+  # reject the translation unit and report every IDF include as unresolved.
+  Remove:
+    - -fstrict-volatile-bitfields
+    - -fno-tree-switch-conversion
+    - -fzero-init-padding-bits*
+    - -fno-malloc-dce
+    - -Wno-old-style-declaration

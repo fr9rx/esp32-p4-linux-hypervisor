@@ -1,0 +1,10 @@
+# Name,      Type, SubType,   Offset,   Size,  Flags
+# 16 MB flash. Partition table lives at 0x8000; app must be 64K-aligned,
+# data partitions 4K-aligned.
+#
+# Removed nvs / phy_init / storage: nvs_flash, esp_phy and spiffs are not in
+# the component build, and ESP32-P4 has no radio, so phy_init had no consumer.
+factory,     app,  factory,   0x10000,  2M,
+kernel,      data, undefined, ,         4M,
+dtb,         data, undefined, ,         64K,
+initramfs,   data, undefined, ,         8M,

@@ -1,0 +1,81 @@
+/*
+ * ESP32-P4 hypervisor guest — PHASE 1
+ *
+ * Goal: get boot messages out. Nothing else.
+ *
+ * Describes only memory and one CPU. No timer, no interrupt controller,
+ * no console driver. Output happens purely through earlycon, which pokes
+ * a fixed address without any driver probing.
+ *
+ * Expected result: Linux boots as far as "Memory: NNNNK/16384K available"
+ * and then HANGS. That hang is correct — there is no timer yet.
+ *
+ * Traps you must handle for this phase:
+ *   - illegal instruction (cause 2): CSR ops, mret, wfi
+ *   - store access fault  (cause 7): writes to 0x10000000 -> real UART
+ */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "espressif,esp32p4";
+	model = "ESP32-P4 hypervisor guest (phase 1)";
+
+	chosen {
+		/*
+		 * earlycon=uart8250,mmio,ADDR
+		 *   mmio  = 8-bit register spacing (matches reg-shift = 0)
+		 *   ADDR  = the fake 16550 your monitor emulates
+		 *
+		 * No console= yet: there is no tty driver in this phase.
+		 */
+		bootargs = "earlycon=uart8250,mmio,0x10000000 keep_bootcon";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/*
+		 * MUST match the rate your emulated mtime actually counts at.
+		 * If you back mtime with the P4 SYSTIMER, that is 16 MHz.
+		 * Unused in phase 1 (no timer node) but Linux reads it early,
+		 * so keep it correct from the start.
+		 */
+		timebase-frequency = <16000000>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			status = "okay";
+
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c",
+					       "zicsr", "zifencei";
+
+			/* legacy property, some code still reads it */
+			riscv,isa = "rv32imac";
+
+			clock-frequency = <360000000>;
+
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	/*
+	 * MUST match your PMP grant exactly — same base, same size.
+	 * Mismatch here shows up as an access fault that looks like a
+	 * hypervisor bug but is really Linux allocating outside its window.
+	 */
+	memory@48000000 {
+		device_type = "memory";
+		reg = <0x48000000 0x01000000>;   /* 16 MB */
+	};
+};

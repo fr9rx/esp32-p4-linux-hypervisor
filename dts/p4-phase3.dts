@@ -1,0 +1,82 @@
+/*
+ * ESP32-P4 hypervisor guest — PHASE 3
+ *
+ * Adds: emulated CLINT (timer).
+ *
+ * Expected result: boot gets past calibrate_delay(), prints BogoMIPS,
+ * registers a clocksource, and reaches "Freeing unused kernel memory".
+ * Then it hangs or panics looking for a console — no tty driver yet.
+ *
+ * New traps for this phase:
+ *   - load/store access fault at 0x02000000..0x0200ffff
+ *       0x0000 msip      software interrupt (write 1 = raise MSIP)
+ *       0x4000 mtimecmp  64-bit comparator, low word then high word
+ *       0xbff8 mtime     64-bit free-running counter, read-only
+ *
+ * Back mtime with the real SYSTIMER. Whatever rate you feed it,
+ * timebase-frequency below must match.
+ */
+
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "espressif,esp32p4";
+	model = "ESP32-P4 hypervisor guest (phase 3)";
+
+	chosen {
+		bootargs = "earlycon=uart8250,mmio,0x10000000 keep_bootcon";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <16000000>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			status = "okay";
+
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c",
+					       "zicsr", "zifencei";
+			riscv,isa = "rv32imac";
+			clock-frequency = <360000000>;
+
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	memory@48000000 {
+		device_type = "memory";
+		reg = <0x48000000 0x01000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		/*
+		 * The two interrupt numbers are mip/mie BIT POSITIONS:
+		 *   3 = MSIP (software)
+		 *   7 = MTIP (timer)
+		 * Both are delivered by ORing into the guest's shadow mip and
+		 * injecting — they do NOT go through the PLIC.
+		 */
+		clint: clint@2000000 {
+			compatible = "sifive,clint0", "riscv,clint0";
+			reg = <0x02000000 0x00010000>;
+			interrupts-extended = <&cpu0_intc 3>,
+					      <&cpu0_intc 7>;
+		};
+	};
+};
