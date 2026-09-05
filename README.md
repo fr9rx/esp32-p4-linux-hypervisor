@@ -1,4 +1,4 @@
-# esp32-p4-emulator
+# esp32-p4-linux-hypervisor
 
 A hand-written **M-mode hypervisor** for the ESP32-P4 that boots **NOMMU
 Linux 6.8-rc1 as a U-mode guest** by trap-and-emulate.
