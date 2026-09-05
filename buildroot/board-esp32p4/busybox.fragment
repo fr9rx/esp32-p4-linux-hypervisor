@@ -1,0 +1,20 @@
+# /bin/sh is hush here (CONFIG_SH_IS_HUSH), and its builtins are individually
+# selectable. Without these, /etc/profile fails on its very first line with
+# "sh: can't execute 'export': No such file or directory" -- hush had parsed
+# export as an external command because the builtin was compiled out.
+CONFIG_HUSH_EXPORT=y
+CONFIG_HUSH_EXPORT_N=y
+CONFIG_HUSH_UNSET=y
+CONFIG_HUSH_UMASK=y
+CONFIG_HUSH_SET=y
+CONFIG_HUSH_READ=y
+CONFIG_HUSH_TRAP=y
+CONFIG_HUSH_KILL=y
+CONFIG_HUSH_WAIT=y
+CONFIG_HUSH_TYPE=y
+CONFIG_HUSH_TIMES=y
+CONFIG_HUSH_ECHO=y
+CONFIG_HUSH_PRINTF=y
+CONFIG_HUSH_TEST=y
+CONFIG_HUSH_GETOPTS=y
+CONFIG_HUSH_ULIMIT=y

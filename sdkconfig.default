@@ -1,6 +1,66 @@
+# NOTE: this file is NOT read by the build. IDF looks for "sdkconfig.defaults"
+# (plural); this one is named "sdkconfig.default" and never has been read. It
+# survives as the written reasoning behind the non-obvious settings, which is
+# worth keeping -- the settings themselves are live in sdkconfig, which is
+# tracked in git, so the build is reproducible without this file. Renaming it
+# would silently activate everything below, so don't do that casually.
+
 CONFIG_ESP_SYSTEM_MEMPROT=n
 CONFIG_SPIRAM=y
 CONFIG_SPIRAM_MODE_HEX=y
 CONFIG_SPIRAM_SPEED_200M=y
 CONFIG_SPIRAM_XIP_FROM_PSRAM=n
 CONFIG_SPIRAM_USE_MEMMAP=y
+# Core 1 runs the guest, never FreeRTOS: it has no tick to feed the
+# interrupt watchdog and no idle task for the task watchdog, so both
+# would reset the board (300 ms and 5 s respectively).
+CONFIG_ESP_INT_WDT_CHECK_CPU1=n
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=n
+
+# USB host for the keyboard. IDF v6.1-beta1 ships no USB host stack,
+# so CherryUSB provides it; see main/idf_component.yml and components/usb.
+CONFIG_CHERRYUSB=y
+CONFIG_CHERRYUSB_HOST=y
+CONFIG_CHERRYUSB_HOST_DWC2_ESP=y
+CONFIG_CHERRYUSB_HOST_HID=y
+
+# Console baud: 4 Mbps.
+#
+# 115200 was the stock rate and 921600 was tried and reverted once, on the
+# argument that the win was only ~0.6% of wall clock. That argument is dead --
+# it priced baud as a way to buy back CPU, and HYP_UART_LOG_BLOCKING=0 in
+# main/main.c already took that cost to zero by dropping bytes instead of
+# waiting for them.
+#
+# What baud buys now is those dropped bytes back. The guest produces console
+# output faster than a 115200 wire can carry it, so the log had holes in it.
+# Measured, same workload each time:
+#
+#     115200    tx dropped 3392
+#     2 Mbps    tx dropped 61
+#     3 Mbps    tx dropped 0
+#     4 Mbps    tx dropped 0
+#
+# So the log is lossless again AND the guest never waits. 4 Mbps is the ceiling
+# ESP_CONSOLE_UART_BAUDRATE allows (esp_stdio/Kconfig: range 1200 4000000 if
+# !PM_ENABLE). The SoC itself goes to 5 Mbps (SOC_UART_BITRATE_MAX=5000000) and
+# the CP2102N bridge on this board carries 4 Mbps cleanly -- above its 3 Mbps
+# datasheet figure -- but reaching 5 would mean overriding the rate at runtime
+# with uart_ll_set_baudrate() instead of via Kconfig, and it buys nothing: loss
+# is already zero from 3 Mbps up.
+#
+# Two things to know before changing it.
+#
+# ESP_CONSOLE_UART_BAUDRATE has no Kconfig prompt unless ESP_CONSOLE_UART_CUSTOM
+# is set, so ESP_CONSOLE_UART_DEFAULT has to be cleared and CUSTOM set as well.
+# And -- the part that wasted a cycle here -- IDF 6.1 reads sdkconfig as a
+# *defaults* file and marks every line it generated with a preceding
+# "# default:" comment (esp_kconfiglib/core.py:1385). A hand-edit that leaves
+# that marker in place is treated as a default, loses to the Kconfig default,
+# and is silently rewritten. Delete the marker line to make the assignment
+# user-set. Nothing warns you.
+#
+# The ROM bootloader banner is always emitted at 115200 whatever this says, so
+# the first ~700 bytes of any capture at a higher rate are framing garbage. The
+# second-stage bootloader switches to this rate and everything from there is
+# clean.

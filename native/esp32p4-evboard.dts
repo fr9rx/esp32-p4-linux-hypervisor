@@ -1,0 +1,493 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Espressif ESP32-P4-Function-EV-Board — ESP32-P4 HP core
+ *
+ * HP core: dual RV32IMAFC at 400 MHz
+ * RAM:     32 MB HEX PSRAM at 0x48000000 (200 MHz DDR)
+ * UART0:   0x500CA000, pre-configured at 115200 by boot shim
+ * SYSTIMER: 16 MHz free-running counter (timebase)
+ */
+/dts-v1/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	model = "Espressif ESP32-P4 Function EV Board";
+	compatible = "espressif,esp32p4-function-ev", "espressif,esp32p4";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <16000000>;
+
+		CPU0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			riscv,isa = "rv32imafc";
+			mmu-type = "riscv,none";
+			status = "okay";
+
+			CPU0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	memory@48000000 {
+		device_type = "memory";
+		reg = <0x48000000 0x02000000>; /* 32 MB PSRAM */
+	};
+
+	/*
+	 * XTAL fixed-rate clock at 40 MHz.  Used as the UART SCLK source
+	 * (the driver selects XTAL_CLK via CLK_CONF_DEFAULT).
+	 */
+	xtal_clk: xtal-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;
+		clock-output-names = "xtal";
+	};
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "keep_bootcon console=ttyS0,115200 loglevel=8";
+	};
+
+	soc: soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		/*
+		 * CLIC: Core-Local Interrupt Controller for the HP core.
+		 * 240 slots × 4 bytes.  Slots 16-239 are for peripheral
+		 * sources routed via the interrupt matrix.
+		 *
+		 * reg[0]: CLIC control registers
+		 * reg[1]: INTMTX HP core-0 base — used by the CLIC driver to
+		 *         route peripheral sources to slots on domain map.
+		 *
+		 * #interrupt-cells = 3: <clic_slot intmtx_source trigger>
+		 *   intmtx_source 0 means no routing (local interrupts).
+		 *   trigger is IRQ_TYPE_LEVEL_HIGH or IRQ_TYPE_EDGE_RISING.
+		 *
+		 * clic0 has no interrupts-extended link to CPU0_intc: the
+		 * CLIC<->hart wiring is set up in-driver (IRQCHIP_DECLARE +
+		 * the riscv_intc handler reads the active slot from mcause),
+		 * not via a DT interrupt-parent chain, so the CPU0_intc node
+		 * above has no DT consumers here by design.
+		 */
+		clic0: interrupt-controller@20801000 {
+			compatible = "espressif,esp32p4-clic";
+			reg = <0x20801000 0x3c0>,
+			      <0x500d6000 0x200>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+		};
+
+		/*
+		 * SYSTIMER: 52-bit counter at 16 MHz (XTAL).
+		 * Alarm 0 → INTMTX source 53 → CLIC slot 17.
+		 * Edge-triggered: handle_percpu_devid_irq does not ack the CLIC,
+		 * so we rely on the edge latch auto-clearing on ack.
+		 */
+		systimer: timer@500e2000 {
+			compatible = "espressif,esp32p4-systimer";
+			reg = <0x500e2000 0x100>;
+			interrupts-extended = <&clic0 17 53 IRQ_TYPE_EDGE_RISING>;
+			status = "okay";
+		};
+
+		/*
+		 * UART0: pre-configured at 115200 8N1 by the boot shim.
+		 * INTMTX source 31 (ETS_UART0_INTR_SOURCE) → CLIC slot 18.
+		 * Level-triggered so bytes arriving while the FIFO is still
+		 * non-empty re-fire the interrupt.
+		 * Clock: 40 MHz XTAL (driver selects XTAL_CLK in CLK_CONF).
+		 */
+		uart0: serial@500ca000 {
+			compatible = "esp,esp32p4-uart";
+			reg = <0x500ca000 0x1000>;
+			interrupts-extended = <&clic0 18 31 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&xtal_clk>;
+			status = "okay";
+		};
+	};
+};
+/ {
+	/*
+	 * Reserved-memory regions carved from the 32 MB PSRAM window
+	 * (base 0x48000000, size 0x02000000 -> top 0x4A000000), below
+	 * whatever the kernel itself claims.
+	 *
+	 * The only child today is the NOMMU user-space mmap pool
+	 * (app_pool, below). The DRM framebuffer is NOT carved out here --
+	 * the display path scans out of the kernel's own pages, and the
+	 * old shared-dma-pool "display_cma" region that used to live here
+	 * was removed (CONFIG_CMA depends on MMU; see app_pool's comment).
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Reserved pool for large NOMMU user-space mmap
+		 * allocations. See
+		 * Documentation/devicetree/bindings/reserved-memory/
+		 * linux,nommu-userspace-pool.yaml.
+		 *
+		 * 10 MB at the top of PSRAM, replacing the no-op
+		 * shared-dma-pool ("display_cma") carveout that used to
+		 * occupy this region — CONFIG_CMA depends on MMU and was
+		 * unreachable on this SoC, so display_cma was never
+		 * actually backing dma_alloc_coherent.
+		 *
+		 * Sized to fit the largest single user mmap we want to
+		 * support: fbdoom -mb 6 (6 MB Z_zone) plus the ~2.2 MB
+		 * resident set of init/getty/sh that already lives in the
+		 * pool by the time fbdoom forks.  Allocations that exceed
+		 * the pool fall through to the buddy allocator, which
+		 * caps at MAX_PAGE_ORDER=10 = 4 MB.
+		 *
+		 * Made possible by moving the rootfs out of
+		 * the kernel image into a squashfs partition mounted via
+		 * mtd-rom — without that, a 10 MB carveout starves the
+		 * early-init buddy heap during initramfs unpack.
+		 */
+		app_pool: app-pool@49600000 {
+			compatible = "linux,nommu-userspace-pool";
+			reg = <0x49600000 0x00a00000>;
+		};
+	};
+
+	/*
+	 * MIPI DSI PHY analog supply.
+	 *
+	 * On P4 this is LDO channel 3 at 2500 mV, acquired in the probe via
+	 * esp_ldo_acquire_channel(). There is no upstream P4 LDO/PMIC driver
+	 * yet, so for now we model it as a fixed-regulator that is "always on"
+	 * once Linux is up — the boot shim can pre-enable LDO3 before jumping
+	 * into the kernel, matching how we handle UART clocking.
+	 *
+	 * @TODO replace with a real esp32p4-ldo driver binding once written.
+	 */
+	dsi_phy_supply: regulator-dsi-phy {
+		compatible = "regulator-fixed";
+		regulator-name = "mipi-dsi-phy-2v5";
+		regulator-min-microvolt = <2500000>;
+		regulator-max-microvolt = <2500000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	/*
+	 * Fixed clock standing in for the DSI host APB ("pclk"). The DW
+	 * bridge calls devm_clk_get(dev, "pclk") unconditionally. We don't
+	 * have a P4 clock-controller driver yet; the APB is left running
+	 * by the boot shim. Model it as an always-present fixed clock so
+	 * probe succeeds. Frequency doesn't matter — the DW driver only
+	 * prepares/enables it, doesn't use the rate.
+	 */
+	dsi_pclk: dsi-pclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <100000000>;
+		clock-output-names = "dsi-pclk";
+	};
+
+	/*
+	 * Backlight.
+	 *
+	 * The badge drove this from the C6's LEDC over SPI; on this board the
+	 * BL net is a plain P4 GPIO (BSP_LCD_BACKLIGHT = GPIO 26), so it is a
+	 * simple on/off gpio-backlight. No PWM controller is involved and
+	 * nothing has to defer waiting for a coprocessor.
+	 *
+	 * default-on matters: the panel is dark until something enables this,
+	 * and a dark panel is indistinguishable from a DSI that never came up.
+	 */
+	backlight: backlight {
+		compatible = "gpio-backlight";
+		gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+		default-on;
+	};
+};
+
+&soc {
+	/*
+	 * GPIO / IO MUX controller.
+	 *
+	 * Panel reset is GPIO 17 (active high, per FINDINGS.md). We need a
+	 * gpio-controller node to reference it. P4 IO MUX + GPIO registers
+	 * live in one block; no upstream driver exists.
+	 *
+	 * @TODO write drivers/gpio/gpio-esp32p4.c (or port from ESP-IDF HAL).
+	 * @TODO confirm register base; 0x500E0000 is the documented GPIO base
+	 *       per TRM v0.4 — verify against the datasheet before trusting.
+	 */
+	gpio0: gpio@500e0000 {
+		compatible = "espressif,esp32p4-gpio";
+		reg = <0x500e0000 0x1000>;
+		espressif,bank-id = <0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupts-extended = <&clic0 21 74 IRQ_TYPE_LEVEL_HIGH>;
+		status = "okay";
+	};
+
+	gpio1: gpio-bank1@500e0000 {
+		compatible = "espressif,esp32p4-gpio";
+		reg = <0x500e0000 0x1000>;
+		espressif,bank-id = <1>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "okay";
+	};
+
+	/*
+	 * MIPI DSI host + Espressif bridge glue.
+	 *
+	 * Layout (from FINDINGS.md + main.c):
+	 *   0x500A0000 + 0x0800 — DW-MIPI-DSI host (Synopsys IP)
+	 *   0x500A0800 + 0x0100 — Espressif bridge (DPI_OUTPUT_EN, DMA glue,
+	 *                        pixel-format mux, video-timing shadow regs)
+	 *
+	 * The top-level `compatible` targets the Espressif glue driver
+	 * (drivers/gpu/drm/espressif/dw-mipi-dsi-esp32p4.c — to be written).
+	 * That driver instantiates the Synopsys bridge via dw_mipi_dsi_probe()
+	 * and owns the P4-specific knobs (MODE_CFG force-to-video after DCS
+	 * reads — Finding #1 — plus element-order config — Finding #3).
+	 *
+	 * #address-cells / #size-cells / port shape follows the common
+	 * dsi-controller pattern used by Rockchip/STM32/StarFive.
+	 *
+	 * @TODO INTMTX source number for DSI host interrupt — not yet read out
+	 *       of the TRM. Placeholder 0xff must be fixed before probe.
+	 * @TODO clock bindings: DSI host, DPI pclk, PHY refclk all need real
+	 *       clock-cells from a P4 clock controller driver (doesn't exist
+	 *       yet; boot shim pre-configures).
+	 */
+	dsi: dsi@500a0000 {
+		compatible = "espressif,esp32p4-mipi-dsi";
+		reg = <0x500a0000 0x0800>,   /* DW-MIPI-DSI host */
+		      <0x500a0800 0x0100>;   /* Espressif bridge glue */
+		reg-names = "host", "bridge";
+
+		/* @TODO real INTMTX source; 0xff is a placeholder. */
+		interrupts-extended = <&clic0 19 0xff IRQ_TYPE_LEVEL_HIGH>;
+
+		/* @TODO wire real clock-names once we have a P4 clock driver:
+		 *   "pclk"  — DSI host APB (fixed-clock stub for now)
+		 *   "phy"   — DSI PHY reference (derived from XTAL)
+		 *   "pix"   — DPI pixel clock (47 MHz for BONO panel)
+		 * For now the boot shim leaves all three running. */
+		clocks = <&dsi_pclk>;
+		clock-names = "pclk";
+
+		/*
+		 * phy-supply intentionally omitted — adding it here broke the
+		 * panel probe chain (Fixed dep cycle got worse; panel driver
+		 * never reached mipi_dsi_attach). The glue driver handles the
+		 * missing phy supply by falling back to a dummy regulator. LDO3
+		 * is always-on via our direct PMU poke (esp32p4_dsi_ldo3_enable).
+		 */
+
+		phys = <&dsi_phy>;
+		phy-names = "dsi";
+
+		/* EK79007: 2 lanes at 1 Gbps each. */
+		data-lanes = <1 2>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* Port 0: DPI input from the display controller. No
+			 * separate DC IP on P4 — the Espressif bridge sources
+			 * pixels directly from CMA via DW-GDMA. This port
+			 * remains a stub for the DRM bridge chain. */
+			port@0 {
+				reg = <0>;
+			};
+
+			/* Port 1: DSI output to panel. */
+			port@1 {
+				reg = <1>;
+				dsi_out: endpoint {
+					remote-endpoint = <&panel_in>;
+				};
+			};
+		};
+
+		/*
+		 * EK79007, 1024x600, two lanes. Timings and the register
+		 * sequence come from Espressif's esp_lcd_ek79007 and the
+		 * EK79007_1024_600_PANEL_60HZ_CONFIG macro; the driver is
+		 * drivers/gpu/drm/panel/panel-ek79007.c.
+		 *
+		 * Unlike the badge's BONO panel this one is not transposed, so
+		 * there is no rotation property and no blit-time rotation.
+		 *
+		 * The backlight reference is safe to carry here: gpio-backlight
+		 * binds against a real P4 GPIO on this board, so the panel does
+		 * not defer forever the way it would have on the badge.
+		 */
+		panel@0 {
+			compatible = "fitipower,ek79007";
+			reg = <0>; /* virtual channel 0 */
+
+			/* BSP_LCD_RST for the 1024x600 sub-board. */
+			reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+
+			power-supply = <&dsi_phy_supply>;
+			backlight = <&backlight>;
+
+			port {
+				panel_in: endpoint {
+					remote-endpoint = <&dsi_out>;
+				};
+			};
+		};
+	};
+
+	/*
+	 * DSI D-PHY. On P4 this is a separate IP block colocated with the
+	 * DSI host. Address not in the probe, need to dig out of the TRM.
+	 *
+	 * @TODO confirm PHY reg range. Some SoCs expose the DW PHY behind the
+	 *       host register window; others give it its own page. If the
+	 *       former, this node disappears and the glue driver manages the
+	 *       PHY via offsets within `host`.
+	 */
+	dsi_phy: phy@500a0900 {
+		compatible = "espressif,esp32p4-mipi-dphy";
+		reg = <0x500a0900 0x0100>; /* @TODO verify */
+		#phy-cells = <0>;
+		power-supply = <&dsi_phy_supply>;
+		status = "okay";
+	};
+
+	/*
+	 * ESP32-P4 SDMMC controller, slot 0 = the badge's microSD card.
+	 *
+	 * The IP is byte-for-byte DesignWare DW MMC ("dw-mshc"); register
+	 * map matches mainline drivers/mmc/host/dw_mmc.h offsets exactly.
+	 * Mainline `synopsys,dw-mshc-pltfm` drives it without a glue file.
+	 *
+	 * Slot 0 uses dedicated IOMUX pins (no GPIO matrix), function 0:
+	 *   GPIO39 = D0   GPIO40 = D1   GPIO41 = D2   GPIO42 = D3
+	 *   GPIO43 = CLK  GPIO44 = CMD
+	 * Pin map taken from esp-idf's sdmmc_pins.h SDMMC_SLOT0_IOMUX_*.
+	 *
+	 * No pinctrl, no clock controller: biu/ciu are fixed-clock stubs
+	 * matching the rates the boot shim programs into HP_SYS_CLKRST.
+	 * Source clock = PLL_F160M with host divider 4 → 40 MHz LS clock.
+	 * mainline dw_mmc picks card_div=1 → 20 MHz card clock, under the
+	 * default-speed cap of 25 MHz (see max-frequency below).
+	 *
+	 * Hot-insert: `broken-cd` makes the mmc core poll for cards every
+	 * ~1 s. The badge's CD line wiring isn't yet known; replace with
+	 * `cd-gpios = <&gpio0 N GPIO_ACTIVE_LOW>` once identified.
+	 *
+	 * @TODO replace fixed-clock stubs with a real esp32p4-clkrst
+	 *       provider, then HS-mode (50 MHz) becomes possible.
+	 * @TODO write esp32p4-pinctrl so DT can claim the IOMUX routing
+	 *       instead of the boot shim doing it.
+	 */
+	sdmmc_biu_clk: sdmmc-biu-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;
+		clock-output-names = "sdmmc-biu";
+	};
+
+	sdmmc_ciu_clk: sdmmc-ciu-clk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <40000000>;
+		clock-output-names = "sdmmc-ciu";
+	};
+
+	sdmmc: mmc@50083000 {
+		compatible = "snps,dw-mshc";
+		reg = <0x50083000 0x1000>;
+		dma-noncoherent;
+
+		/* INTMTX source 23 (ETS_SDIO_HOST_INTR_SOURCE), CLIC slot 22.
+		 * DW MMC uses level-high interrupts (RINTSTS read-to-ack but
+		 * line stays asserted until status bits are cleared). */
+		interrupts-extended = <&clic0 22 23 IRQ_TYPE_LEVEL_HIGH>;
+
+		clocks = <&sdmmc_biu_clk>, <&sdmmc_ciu_clk>;
+		clock-names = "biu", "ciu";
+
+		/* fifo-depth omitted: dw_mmc reads FIFOTH at probe and uses
+		 * the hardware-reported depth. Hardcoding wrong is worse
+		 * than letting the driver auto-detect. */
+
+		vmmc-supply = <&sdmmc_vmmc>;
+
+		bus-width = <4>;
+		broken-cd;
+		disable-wp;
+		max-frequency = <25000000>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+	};
+
+	/*
+	 * On-chip LDO channel 4 powers the microSD slot. Boot shim sets
+	 * 3.3V via PMU.ext_ldo[4] (PMU_EXT_LDO_P1_0P2A_REG @ +0x1d8).
+	 * Modeled as a fixed regulator until a real esp32p4-ldo driver
+	 * lands.
+	 */
+	sdmmc_vmmc: regulator-sdmmc-vmmc {
+		compatible = "regulator-fixed";
+		regulator-name = "sdmmc-vmmc";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+	/*
+	 * Memory-mapped read-only SPI flash window covering the rootfs
+	 * partition.  The ESP32-P4 cache subsystem maps a flash range to
+	 * a virtual address; the boot shim calls esp_partition_mmap() on
+	 * the rootfs partition, leaves the mapping live across the jump
+	 * to Linux, and patches `reg` below at runtime with the actual
+	 * VA the IDF allocator returned and the partition size.  The
+	 * placeholder values 0xdeadbeef / 0xcafefade are searched for as
+	 * a literal byte sequence in the DTB blob.
+	 *
+	 * Linux's existing physmap-core driver handles the "mtd-rom"
+	 * compatible — no new driver needed.
+	 */
+	flash@deadbeef {
+		compatible = "mtd-rom";
+		reg = <0xdeadbeef 0xcafefade>;
+		bank-width = <4>;
+	};
+};

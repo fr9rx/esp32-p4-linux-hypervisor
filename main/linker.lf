@@ -1,0 +1,28 @@
+# Put the whole monitor in internal RAM.
+#
+# `noflash` maps this component's .text to iram0_text and its .rodata to
+# dram0_data, so nothing in libmain.a is fetched through the flash cache.
+#
+# This is a correctness fix as much as a speed one, and the correctness half is
+# the part that matters. Core 1's trap handler -- hyp_trap_entry in
+# hyp_vectors.S, hypervisor() and everything it reaches -- used to live in
+# flash. Any flash operation on core 0 disables the cache, and IDF's answer to
+# that is to IPC the other core into an IRAM spin for the duration
+# (spi_flash_op_block_func). Core 1 does not run FreeRTOS and cannot be parked
+# that way, so a trap taken during a flash write would have fetched its handler
+# through a disabled cache. Nothing writes flash at runtime today, which is the
+# only reason that never fired; it is a landmine, not a design.
+#
+# The speed half: the trap path is the hottest code on the machine -- 345,906
+# traps in a 45-second session, 542 cycles each -- and every one of them was
+# subject to flash cache misses. IRAM has no misses.
+#
+# The DTB placeholder patcher, the romfs mapper and app_main() get pulled into
+# IRAM too, which is a few KB of waste for code that runs once. Not worth a
+# per-function annotation scheme to avoid; there is 768 KB of L2MEM and the
+# whole component is tens of KB.
+
+[mapping:main]
+archive: libmain.a
+entries:
+    * (noflash)

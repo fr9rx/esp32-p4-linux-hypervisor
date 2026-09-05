@@ -1,2 +1,25 @@
 build/
 .cache/
+managed_components/
+te.log
+
+# Python bytecode, from running the tools/ test suites.
+__pycache__/
+*.pyc
+
+# hypmon transcripts and dumps, written next to wherever it was run.
+hypmon.log
+hypmon-dump.txt
+*.log
+
+# The native (no-hypervisor) Linux port's IDF build tree. 248 MB of object
+# files and a second toolchain's worth of intermediates; the sources beside it
+# are what matters.
+native/linux-native/build/
+native/linux-native/sdkconfig.old
+native/linux-native/managed_components/
+
+# The native port's prebuilt images (11 MB). The hypervisor images under
+# guest/ ARE tracked, because flashing the board needs them and they cannot be
+# rebuilt from anything in this repo; these belong to the why2025 tree.
+native/images/

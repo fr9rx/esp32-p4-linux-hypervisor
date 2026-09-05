@@ -981,7 +981,7 @@ CONFIG_IDF_TARGET_ARCH="riscv"
 # default:
 CONFIG_IDF_TARGET="esp32p4"
 # default:
-CONFIG_IDF_INIT_VERSION="6.0.2"
+CONFIG_IDF_INIT_VERSION="6.1.0"
 # default:
 CONFIG_IDF_TARGET_ESP32P4=y
 # default:
@@ -990,7 +990,9 @@ CONFIG_IDF_FIRMWARE_CHIP_ID=0x0012
 #
 # Build type
 #
+# default:
 CONFIG_APP_BUILD_TYPE_APP_2NDBOOT=y
+# default:
 # CONFIG_APP_BUILD_TYPE_RAM is not set
 # default:
 CONFIG_APP_BUILD_GENERATE_BINARIES=y
@@ -1008,6 +1010,7 @@ CONFIG_APP_BUILD_USE_FLASH_SECTIONS=y
 
 # default:
 # CONFIG_APP_REPRODUCIBLE_BUILD is not set
+# default:
 # CONFIG_APP_NO_BLOBS is not set
 # end of Build type
 
@@ -1045,8 +1048,11 @@ CONFIG_BOOTLOADER_PROJECT_VER=1
 
 # default:
 CONFIG_BOOTLOADER_OFFSET_IN_FLASH=0x2000
+# default:
 CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y
+# default:
 # CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG is not set
+# default:
 # CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF is not set
 
 #
@@ -1106,6 +1112,7 @@ CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT=y
 # CONFIG_BOOTLOADER_FACTORY_RESET is not set
 # default:
 # CONFIG_BOOTLOADER_APP_TEST is not set
+# default:
 CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE=y
 # default:
 CONFIG_BOOTLOADER_WDT_ENABLE=y
@@ -1260,7 +1267,8 @@ CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 # CONFIG_ESPTOOLPY_FLASHSIZE_128MB is not set
 # default:
 CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
-CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE=y
+# default:
+# CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE is not set
 # default:
 CONFIG_ESPTOOLPY_BEFORE_RESET=y
 # default:
@@ -1274,7 +1282,7 @@ CONFIG_ESPTOOLPY_AFTER_RESET=y
 # default:
 CONFIG_ESPTOOLPY_AFTER="hard-reset"
 # default:
-CONFIG_ESPTOOLPY_MONITOR_BAUD=4000000
+CONFIG_ESPTOOLPY_MONITOR_BAUD=115200
 # end of Serial flasher config
 
 #
@@ -1285,7 +1293,6 @@ CONFIG_ESPTOOLPY_MONITOR_BAUD=4000000
 # CONFIG_PARTITION_TABLE_TWO_OTA is not set
 # CONFIG_PARTITION_TABLE_TWO_OTA_LARGE is not set
 CONFIG_PARTITION_TABLE_CUSTOM=y
-# default:
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 # default:
 CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
@@ -1298,11 +1305,16 @@ CONFIG_PARTITION_TABLE_MD5=y
 #
 # Compiler options
 #
-# CONFIG_COMPILER_OPTIMIZATION_DEBUG is not set
+# default:
+CONFIG_COMPILER_OPTIMIZATION_DEBUG=y
+# default:
 # CONFIG_COMPILER_OPTIMIZATION_SIZE is not set
-CONFIG_COMPILER_OPTIMIZATION_PERF=y
+# default:
+# CONFIG_COMPILER_OPTIMIZATION_PERF is not set
+# default:
 # CONFIG_COMPILER_OPTIMIZATION_NONE is not set
-CONFIG_COMPILER_ENABLE_RISCV_ZCMP=y
+# default:
+# CONFIG_COMPILER_ENABLE_RISCV_ZCMP is not set
 # default:
 CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE=y
 # default:
@@ -1311,12 +1323,15 @@ CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE=y
 # CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE is not set
 # default:
 # CONFIG_COMPILER_ASSERT_NDEBUG_EVALUATE is not set
-CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB=y
-# CONFIG_COMPILER_FLOAT_LIB_FROM_RVFPLIB is not set
+# default:
+# CONFIG_COMPILER_FLOAT_LIB_FROM_GCCLIB is not set
+# default:
+CONFIG_COMPILER_FLOAT_LIB_FROM_RVFPLIB=y
 # default:
 CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL=2
 # default:
 # CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT is not set
+# default:
 CONFIG_COMPILER_HIDE_PATHS_MACROS=y
 # default:
 # CONFIG_COMPILER_CXX_EXCEPTIONS is not set
@@ -1373,16 +1388,82 @@ CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE=y
 #
 
 #
-# !!! MINIMAL_BUILD is enabled !!!
+# Bluetooth
+#
+# default:
+# CONFIG_BT_ENABLED is not set
+
+#
+# Common Options
 #
 
 #
-# Only common components and those transitively required by the main component are listed
+# BT Logs
 #
 
 #
-# If a component configuration is missing, please add it to the main component's requirements
+# Log Sources
 #
+# end of Log Sources
+
+# default:
+# CONFIG_BT_LOG_CRITICAL_ONLY is not set
+# default:
+# CONFIG_BLE_LOG_ENABLED is not set
+
+#
+# Legacy SPI Log Output (Deprecated - use BT Log Async Output instead)
+#
+# default:
+# CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED is not set
+# end of Legacy SPI Log Output (Deprecated - use BT Log Async Output instead)
+# end of BT Logs
+
+# default:
+# CONFIG_BT_LE_USED_MEM_STATISTICS_ENABLED is not set
+# end of Common Options
+# end of Bluetooth
+
+#
+# Console Library
+#
+# default:
+# CONFIG_CONSOLE_SORTED_HELP is not set
+# end of Console Library
+
+#
+# Legacy Driver Configurations
+#
+
+#
+# Legacy TWAI Driver Configurations
+#
+# default:
+# CONFIG_TWAI_ISR_IN_IRAM_LEGACY is not set
+# default:
+# CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN is not set
+# default:
+# CONFIG_TWAI_SKIP_LEGACY_CONFLICT_CHECK is not set
+# end of Legacy TWAI Driver Configurations
+
+#
+# Legacy I2C Driver Configurations
+#
+# default:
+# CONFIG_I2C_SUPPRESS_DEPRECATE_WARN is not set
+# default:
+# CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK is not set
+# end of Legacy I2C Driver Configurations
+
+#
+# Legacy Touch Sensor Driver Configurations
+#
+# default:
+# CONFIG_TOUCH_SUPPRESS_DEPRECATE_WARN is not set
+# default:
+# CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK is not set
+# end of Legacy Touch Sensor Driver Configurations
+# end of Legacy Driver Configurations
 
 #
 # eFuse Bit Manager
@@ -1396,11 +1477,89 @@ CONFIG_EFUSE_MAX_BLK_LEN=256
 # end of eFuse Bit Manager
 
 #
+# ESP-TLS
+#
+# default:
+CONFIG_ESP_TLS_USING_MBEDTLS=y
+# default:
+# CONFIG_ESP_TLS_CUSTOM_STACK is not set
+# default:
+# CONFIG_ESP_TLS_USE_SECURE_ELEMENT is not set
+# default:
+CONFIG_ESP_TLS_USE_DS_PERIPHERAL=y
+# default:
+# CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS is not set
+# default:
+# CONFIG_ESP_TLS_SERVER_SESSION_TICKETS is not set
+# default:
+# CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK is not set
+# default:
+# CONFIG_ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL is not set
+# default:
+# CONFIG_ESP_TLS_PSK_VERIFICATION is not set
+# default:
+# CONFIG_ESP_TLS_INSECURE is not set
+# default:
+CONFIG_ESP_TLS_DYN_BUF_STRATEGY_SUPPORTED=y
+# end of ESP-TLS
+
+#
+# ADC and ADC Calibration
+#
+# default:
+# CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_ADC_ENABLE_DEBUG_LOG is not set
+# end of ADC and ADC Calibration
+
+#
+# Wireless Coexistence
+#
+# default:
+# CONFIG_ESP_COEX_GPIO_DEBUG is not set
+# end of Wireless Coexistence
+
+#
 # Common ESP-related
 #
 # default:
 CONFIG_ESP_ERR_TO_NAME_LOOKUP=y
 # end of Common ESP-related
+
+#
+# ESP-Driver:Analog Comparator Configurations
+#
+# default:
+CONFIG_ANA_CMPR_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_ANA_CMPR_ISR_CACHE_SAFE is not set
+# default:
+CONFIG_ANA_CMPR_OBJ_CACHE_SAFE=y
+# default:
+# CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:Analog Comparator Configurations
+
+#
+# ESP-Driver:BitScrambler Configurations
+#
+# default:
+# CONFIG_BITSCRAMBLER_CTRL_FUNC_IN_IRAM is not set
+# end of ESP-Driver:BitScrambler Configurations
+
+#
+# ESP-Driver:Camera Controller Configurations
+#
+# default:
+# CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE is not set
+# end of ESP-Driver:Camera Controller Configurations
 
 #
 # GDMA Configurations
@@ -1425,8 +1584,10 @@ CONFIG_GDMA_OBJ_DRAM_SAFE=y
 #
 # 2D-DMA Configurations
 #
-CONFIG_DMA2D_OPERATION_FUNC_IN_IRAM=y
-CONFIG_DMA2D_ISR_IRAM_SAFE=y
+# default:
+# CONFIG_DMA2D_OPERATION_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_DMA2D_ISR_IRAM_SAFE is not set
 # end of 2D-DMA Configurations
 
 #
@@ -1435,6 +1596,207 @@ CONFIG_DMA2D_ISR_IRAM_SAFE=y
 # default:
 # CONFIG_GPIO_CTRL_FUNC_IN_IRAM is not set
 # end of ESP-Driver:GPIO Configurations
+
+#
+# ESP-Driver:GPTimer Configurations
+#
+# default:
+CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_GPTIMER_ISR_CACHE_SAFE is not set
+# default:
+CONFIG_GPTIMER_OBJ_CACHE_SAFE=y
+# default:
+# CONFIG_GPTIMER_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:GPTimer Configurations
+
+#
+# ESP-Driver:I2C Configurations
+#
+# default:
+# CONFIG_I2C_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_I2C_ENABLE_DEBUG_LOG is not set
+# default:
+CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM=y
+# end of ESP-Driver:I2C Configurations
+
+#
+# ESP-Driver:I2S Configurations
+#
+# default:
+# CONFIG_I2S_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_I2S_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_I2S_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:I2S Configurations
+
+#
+# ESP-Driver:I3C Master Configurations
+#
+# default:
+# CONFIG_I3C_MASTER_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_I3C_MASTER_ENABLE_DEBUG_LOG is not set
+# default:
+# CONFIG_I3C_MASTER_ISR_HANDLER_IN_IRAM is not set
+# end of ESP-Driver:I3C Master Configurations
+
+#
+# ESP-Driver:ISP Configurations
+#
+# default:
+# CONFIG_ISP_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_ISP_CTRL_FUNC_IN_IRAM is not set
+# end of ESP-Driver:ISP Configurations
+
+#
+# ESP-Driver:JPEG-Codec Configurations
+#
+# default:
+# CONFIG_JPEG_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:JPEG-Codec Configurations
+
+#
+# ESP-Driver:LEDC Configurations
+#
+# default:
+# CONFIG_LEDC_CTRL_FUNC_IN_IRAM is not set
+# end of ESP-Driver:LEDC Configurations
+
+#
+# ESP-Driver:MCPWM Configurations
+#
+# default:
+CONFIG_MCPWM_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_MCPWM_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_MCPWM_CTRL_FUNC_IN_IRAM is not set
+# default:
+CONFIG_MCPWM_OBJ_CACHE_SAFE=y
+# default:
+# CONFIG_MCPWM_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:MCPWM Configurations
+
+#
+# ESP-Driver:Parallel IO Configurations
+#
+# default:
+CONFIG_PARLIO_TX_ISR_HANDLER_IN_IRAM=y
+# default:
+CONFIG_PARLIO_RX_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_PARLIO_TX_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_PARLIO_RX_ISR_CACHE_SAFE is not set
+# default:
+CONFIG_PARLIO_OBJ_CACHE_SAFE=y
+# default:
+# CONFIG_PARLIO_ENABLE_DEBUG_LOG is not set
+# default:
+# CONFIG_PARLIO_ISR_IRAM_SAFE is not set
+# end of ESP-Driver:Parallel IO Configurations
+
+#
+# ESP-Driver:PCNT Configurations
+#
+# default:
+# CONFIG_PCNT_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_PCNT_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_PCNT_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:PCNT Configurations
+
+#
+# ESP-Driver:RMT Configurations
+#
+# default:
+CONFIG_RMT_ENCODER_FUNC_IN_IRAM=y
+# default:
+CONFIG_RMT_TX_ISR_HANDLER_IN_IRAM=y
+# default:
+CONFIG_RMT_RX_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_RMT_RECV_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_RMT_TX_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_RMT_RX_ISR_CACHE_SAFE is not set
+# default:
+CONFIG_RMT_OBJ_CACHE_SAFE=y
+# default:
+# CONFIG_RMT_ENABLE_DEBUG_LOG is not set
+# default:
+# CONFIG_RMT_ISR_IRAM_SAFE is not set
+# end of ESP-Driver:RMT Configurations
+
+#
+# ESP-Driver:Sigma Delta Modulator Configurations
+#
+# default:
+# CONFIG_SDM_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_SDM_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:Sigma Delta Modulator Configurations
+
+#
+# ESP-Driver:SD Host SDMMC Controller Configurations
+#
+# default:
+# CONFIG_SD_HOST_SDMMC_ISR_CACHE_SAFE is not set
+# end of ESP-Driver:SD Host SDMMC Controller Configurations
+
+#
+# ESP-Driver:SPI Configurations
+#
+# default:
+CONFIG_SPI_MASTER_ISR_IN_IRAM=y
+# default:
+# CONFIG_SPI_SLAVE_IN_IRAM is not set
+# default:
+CONFIG_SPI_SLAVE_ISR_IN_IRAM=y
+# end of ESP-Driver:SPI Configurations
+
+#
+# ESP-Driver:Touch Sensor Configurations
+#
+# default:
+# CONFIG_TOUCH_CTRL_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_TOUCH_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_TOUCH_ENABLE_DEBUG_LOG is not set
+# default:
+# CONFIG_TOUCH_SKIP_FSM_CHECK is not set
+# end of ESP-Driver:Touch Sensor Configurations
+
+#
+# ESP-Driver:Temperature Sensor Configurations
+#
+# default:
+# CONFIG_TEMP_SENSOR_ENABLE_DEBUG_LOG is not set
+# default:
+# CONFIG_TEMP_SENSOR_ISR_IRAM_SAFE is not set
+# end of ESP-Driver:Temperature Sensor Configurations
+
+#
+# ESP-Driver:TWAI Configurations
+#
+# default:
+# CONFIG_TWAI_ISR_IN_IRAM is not set
+# default:
+# CONFIG_TWAI_IO_FUNC_IN_IRAM is not set
+# default:
+# CONFIG_TWAI_ISR_CACHE_SAFE is not set
+# default:
+# CONFIG_TWAI_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:TWAI Configurations
 
 #
 # ESP-Driver:UART Configurations
@@ -1462,6 +1824,48 @@ CONFIG_USJ_ENABLE_USB_SERIAL_JTAG=y
 # end of ESP-Driver:USB Serial/JTAG Configuration
 
 #
+# Ethernet
+#
+# default:
+CONFIG_ETH_ENABLED=y
+# default:
+CONFIG_ETH_USE_ESP32_EMAC=y
+# default:
+CONFIG_ETH_DMA_BUFFER_SIZE=512
+# default:
+CONFIG_ETH_DMA_RX_BUFFER_NUM=20
+# default:
+CONFIG_ETH_DMA_TX_BUFFER_NUM=10
+# default:
+# CONFIG_ETH_SOFT_FLOW_CONTROL is not set
+# default:
+# CONFIG_ETH_IRAM_OPTIMIZATION is not set
+
+#
+# Ethernet Time
+#
+# default:
+CONFIG_ETH_CLOCK_ADJTIME_PERIOD_MS=1000
+# default:
+CONFIG_ETH_CLOCK_ADJTIME_SLEWLIMIT_PPB=500000
+# end of Ethernet Time
+
+#
+# Ethernet Clock
+#
+# default:
+CONFIG_ETH_EMAC_PHY_REF_CLK_SRC_AUTO=y
+# end of Ethernet Clock
+
+# default:
+CONFIG_ETH_USE_SPI_ETHERNET=y
+# default:
+# CONFIG_ETH_USE_OPENETH is not set
+# default:
+# CONFIG_ETH_TRANSMIT_MUTEX is not set
+# end of Ethernet
+
+#
 # Event Loop Library
 #
 # default:
@@ -1475,6 +1879,94 @@ CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR=y
 # default:
 # CONFIG_ESP_EVENT_LOOP_IN_EXT_RAM is not set
 # end of Event Loop Library
+
+#
+# GDB Stub
+#
+# default:
+CONFIG_ESP_GDBSTUB_ENABLED=y
+# default:
+# CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME is not set
+# default:
+CONFIG_ESP_GDBSTUB_SUPPORT_TASKS=y
+# default:
+CONFIG_ESP_GDBSTUB_MAX_TASKS=32
+# end of GDB Stub
+
+#
+# ESP HID
+#
+# default:
+CONFIG_ESPHID_TASK_SIZE_BT=2048
+# default:
+CONFIG_ESPHID_TASK_SIZE_BLE=4096
+# end of ESP HID
+
+#
+# ESP HTTP client
+#
+# default:
+CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS=y
+# default:
+# CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH is not set
+# default:
+# CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH is not set
+# default:
+# CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT is not set
+# default:
+# CONFIG_ESP_HTTP_CLIENT_ENABLE_GET_CONTENT_RANGE is not set
+# default:
+CONFIG_ESP_HTTP_CLIENT_EVENT_POST_TIMEOUT=2000
+# default:
+# CONFIG_ESP_HTTP_CLIENT_SAVE_RESPONSE_HEADERS is not set
+# end of ESP HTTP client
+
+#
+# HTTP Server
+#
+# default:
+CONFIG_HTTPD_MAX_REQ_HDR_LEN=1024
+# default:
+CONFIG_HTTPD_MAX_URI_LEN=512
+# default:
+CONFIG_HTTPD_ERR_RESP_NO_DELAY=y
+# default:
+CONFIG_HTTPD_PURGE_BUF_LEN=32
+# default:
+# CONFIG_HTTPD_LOG_PURGE_DATA is not set
+# default:
+# CONFIG_HTTPD_WS_SUPPORT is not set
+# default:
+# CONFIG_HTTPD_QUEUE_WORK_BLOCKING is not set
+# default:
+CONFIG_HTTPD_ENABLE_EVENTS=y
+# default:
+CONFIG_HTTPD_SERVER_EVENT_POST_TIMEOUT=2000
+# end of HTTP Server
+
+#
+# ESP HTTPS OTA
+#
+# default:
+# CONFIG_ESP_HTTPS_OTA_DECRYPT_CB is not set
+# default:
+# CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP is not set
+# default:
+CONFIG_ESP_HTTPS_OTA_EVENT_POST_TIMEOUT=2000
+# default:
+# CONFIG_ESP_HTTPS_OTA_ENABLE_PARTIAL_DOWNLOAD is not set
+# default:
+CONFIG_ESP_HTTPS_OTA_VERIFY_SPI_MODE=y
+# end of ESP HTTPS OTA
+
+#
+# ESP HTTPS server
+#
+# default:
+# CONFIG_ESP_HTTPS_SERVER_ENABLE is not set
+# default:
+# CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK is not set
+# end of ESP HTTPS server
 
 #
 # Hardware Settings
@@ -1494,11 +1986,8 @@ CONFIG_ESP_HW_SUPPORT_FUNC_IN_IRAM=y
 # Read the help text of the option below for explanation
 #
 CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
-# default:
 CONFIG_ESP32P4_REV_MIN_0=y
-# default:
 # CONFIG_ESP32P4_REV_MIN_1 is not set
-# default:
 # CONFIG_ESP32P4_REV_MIN_100 is not set
 # default:
 CONFIG_ESP32P4_REV_MIN_FULL=0
@@ -1670,12 +2159,31 @@ CONFIG_ESP_BROWNOUT_USE_INTR=y
 # end of Power Supplier
 
 # default:
+CONFIG_ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM=y
+# default:
 CONFIG_ESP_ENABLE_PVT=y
 # default:
 CONFIG_ESP_INTR_IN_IRAM=y
 # default:
 CONFIG_P4_REV3_MSPI_WORKAROUND_SIZE=0
 # end of Hardware Settings
+
+#
+# ESP-Driver:LCD Controller Configurations
+#
+# default:
+# CONFIG_LCD_RGB_ISR_IRAM_SAFE is not set
+# default:
+# CONFIG_LCD_RGB_RESTART_IN_VSYNC is not set
+# default:
+CONFIG_LCD_DSI_ISR_HANDLER_IN_IRAM=y
+# default:
+# CONFIG_LCD_DSI_ISR_CACHE_SAFE is not set
+# default:
+CONFIG_LCD_DSI_OBJ_FORCE_INTERNAL=y
+# default:
+# CONFIG_LCD_ENABLE_DEBUG_LOG is not set
+# end of ESP-Driver:LCD Controller Configurations
 
 #
 # LibC
@@ -1756,14 +2264,21 @@ CONFIG_ESP_NETIF_RECEIVE_REPORT_ERRORS=y
 # end of Partition API Configuration
 
 #
+# PHY
+#
+# end of PHY
+
+#
 # Power Management
 #
 # default:
-# CONFIG_PM_SLEEP_FUNC_IN_IRAM is not set
+CONFIG_PM_SLEEP_FUNC_IN_IRAM=y
 # default:
 # CONFIG_PM_ENABLE is not set
 # default:
-# CONFIG_PM_SLP_IRAM_OPT is not set
+CONFIG_PM_SLP_IRAM_OPT=y
+# default:
+CONFIG_PM_SLP_DEFAULT_PARAMS_OPT=y
 # default:
 # CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is not set
 # default:
@@ -1782,20 +2297,17 @@ CONFIG_SPIRAM=y
 #
 # default:
 CONFIG_SPIRAM_MODE_HEX=y
-# default:
-CONFIG_SPIRAM_SPEED_200M=y
-# default:
-# CONFIG_SPIRAM_SPEED_80M is not set
-# default:
+# CONFIG_SPIRAM_SPEED_200M is not set
+CONFIG_SPIRAM_SPEED_80M=y
 # CONFIG_SPIRAM_SPEED_20M is not set
 # default:
-CONFIG_SPIRAM_SPEED=200
+CONFIG_SPIRAM_SPEED=80
+# default:
 # CONFIG_SPIRAM_XIP_FROM_PSRAM is not set
 # default:
 # CONFIG_SPIRAM_ECC_ENABLE is not set
 # default:
 CONFIG_SPIRAM_BOOT_HW_INIT=y
-# default:
 CONFIG_SPIRAM_BOOT_INIT=y
 # default:
 CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION=y
@@ -1804,8 +2316,7 @@ CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION=y
 CONFIG_SPIRAM_USE_MEMMAP=y
 # CONFIG_SPIRAM_USE_CAPS_ALLOC is not set
 # CONFIG_SPIRAM_USE_MALLOC is not set
-# default:
-CONFIG_SPIRAM_MEMTEST=y
+# CONFIG_SPIRAM_MEMTEST is not set
 # default:
 # CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY is not set
 # default:
@@ -1842,36 +2353,35 @@ CONFIG_ESP_ROM_PRINT_IN_IRAM=y
 # ESP-STDIO
 #
 # default:
-# CONFIG_ESP_CONSOLE_UART_DEFAULT is not set
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
 # default:
 # CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG is not set
 # default:
-CONFIG_ESP_CONSOLE_UART_CUSTOM=y
+# CONFIG_ESP_CONSOLE_UART_CUSTOM is not set
 # default:
 # CONFIG_ESP_CONSOLE_NONE is not set
-CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
-# CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG is not set
+# default:
+# CONFIG_ESP_CONSOLE_SECONDARY_NONE is not set
+# default:
+CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y
+# default:
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED=y
 # default:
 CONFIG_ESP_CONSOLE_UART=y
-# default:
-CONFIG_ESP_CONSOLE_UART_CUSTOM_NUM_0=y
-# default:
-# CONFIG_ESP_CONSOLE_UART_CUSTOM_NUM_1 is not set
 # default:
 CONFIG_ESP_CONSOLE_UART_NUM=0
 # default:
 CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM=0
 # default:
-CONFIG_ESP_CONSOLE_UART_TX_GPIO=37
-# default:
-CONFIG_ESP_CONSOLE_UART_RX_GPIO=38
-CONFIG_ESP_CONSOLE_UART_BAUDRATE=4000000
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200
 # end of ESP-STDIO
 
 #
 # ESP System Settings
 #
+# default:
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_360=y
+# default:
 # CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_400 is not set
 # default:
 CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360
@@ -1879,11 +2389,14 @@ CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=360
 #
 # Cache config
 #
-# CONFIG_CACHE_L2_CACHE_128KB is not set
-CONFIG_CACHE_L2_CACHE_256KB=y
+# default:
+CONFIG_CACHE_L2_CACHE_128KB=y
+# default:
+# CONFIG_CACHE_L2_CACHE_256KB is not set
+# default:
 # CONFIG_CACHE_L2_CACHE_512KB is not set
 # default:
-CONFIG_CACHE_L2_CACHE_SIZE=0x40000
+CONFIG_CACHE_L2_CACHE_SIZE=0x20000
 # default:
 CONFIG_CACHE_L2_CACHE_LINE_64B=y
 # default:
@@ -1903,6 +2416,8 @@ CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT=y
 # default:
 # CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT is not set
 # default:
+# CONFIG_ESP_SYSTEM_PANIC_GDBSTUB is not set
+# default:
 CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS=0
 # default:
 CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK=y
@@ -1914,7 +2429,12 @@ CONFIG_ESP_SYSTEM_NO_BACKTRACE=y
 # CONFIG_ESP_SYSTEM_USE_EH_FRAME is not set
 # default:
 # CONFIG_ESP_SYSTEM_USE_FRAME_POINTER is not set
-# CONFIG_ESP_SYSTEM_MEMPROT is not set
+# default:
+CONFIG_ESP_SYSTEM_MEMPROT=y
+# default:
+CONFIG_ESP_SYSTEM_MEMPROT_PMP=y
+# default:
+# CONFIG_ESP_SYSTEM_MEMPROT_PMP_LP_CORE_RESERVE_MEM_EXEC is not set
 # default:
 CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE=32
 # default:
@@ -1931,24 +2451,8 @@ CONFIG_ESP_MAIN_TASK_AFFINITY_CPU0=y
 CONFIG_ESP_MAIN_TASK_AFFINITY=0x0
 # default:
 CONFIG_ESP_MINIMAL_SHARED_STACK_SIZE=2048
-# default:
-CONFIG_ESP_INT_WDT=y
-# default:
-CONFIG_ESP_INT_WDT_TIMEOUT_MS=300
-# default:
-# CONFIG_ESP_INT_WDT_CHECK_CPU1 is not set
-# default:
-CONFIG_ESP_TASK_WDT_EN=y
-# default:
-CONFIG_ESP_TASK_WDT_INIT=y
-# default:
-# CONFIG_ESP_TASK_WDT_PANIC is not set
-# default:
-CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
-# default:
-CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=y
-# default:
-# CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1 is not set
+# CONFIG_ESP_INT_WDT is not set
+# CONFIG_ESP_TASK_WDT_EN is not set
 # default:
 # CONFIG_ESP_PANIC_HANDLER_IRAM is not set
 # default:
@@ -2004,6 +2508,414 @@ CONFIG_ESP_TIMER_ISR_AFFINITY_CPU0=y
 # default:
 CONFIG_ESP_TIMER_IMPL_SYSTIMER=y
 # end of ESP Timer (High Resolution Timer)
+
+#
+# ESP Trace Configuration
+#
+# default:
+# CONFIG_ESP_TRACE_LIB_EXTERNAL is not set
+# default:
+CONFIG_ESP_TRACE_LIB_NONE=y
+# default:
+CONFIG_ESP_TRACE_LIB_NAME="none"
+# default:
+# CONFIG_ESP_TRACE_TRANSPORT_APPTRACE is not set
+# default:
+CONFIG_ESP_TRACE_TRANSPORT_NONE=y
+# default:
+CONFIG_ESP_TRACE_TRANSPORT_NAME="none"
+# end of ESP Trace Configuration
+
+#
+# Wi-Fi
+#
+# default:
+# CONFIG_ESP_HOST_WIFI_ENABLED is not set
+# default:
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=10
+# default:
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+# default:
+CONFIG_ESP_WIFI_TX_BUFFER_TYPE=1
+# default:
+CONFIG_ESP_WIFI_DYNAMIC_TX_BUFFER_NUM=32
+# default:
+CONFIG_ESP_WIFI_DYNAMIC_RX_MGMT_BUF=0
+# default:
+CONFIG_ESP_WIFI_RX_MGMT_BUF_NUM_DEF=5
+# default:
+CONFIG_ESP_WIFI_AMPDU_TX_ENABLED=y
+# default:
+CONFIG_ESP_WIFI_TX_BA_WIN=6
+# default:
+CONFIG_ESP_WIFI_AMPDU_RX_ENABLED=y
+# default:
+CONFIG_ESP_WIFI_RX_BA_WIN=6
+# default:
+CONFIG_ESP_WIFI_NVS_ENABLED=y
+# default:
+CONFIG_ESP_WIFI_SOFTAP_BEACON_MAX_LEN=752
+# default:
+CONFIG_ESP_WIFI_MGMT_SBUF_NUM=32
+# default:
+CONFIG_ESP_WIFI_IRAM_OPT=y
+# default:
+CONFIG_ESP_WIFI_EXTRA_IRAM_OPT=y
+# default:
+CONFIG_ESP_WIFI_RX_IRAM_OPT=y
+# default:
+CONFIG_ESP_WIFI_ENABLE_WPA3_SAE=y
+# default:
+CONFIG_ESP_WIFI_ENABLE_SAE_H2E=y
+# default:
+CONFIG_ESP_WIFI_ENABLE_SAE_PK=y
+# default:
+CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT=y
+# default:
+CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA=y
+# default:
+CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT=y
+# default:
+CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP=y
+# default:
+CONFIG_ESP_WIFI_SLP_IRAM_OPT=y
+# default:
+CONFIG_ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME=50
+# default:
+CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT=y
+# default:
+CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME=10
+# default:
+CONFIG_ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME=15
+# default:
+CONFIG_ESP_WIFI_STA_DISCONNECTED_PM_ENABLE=y
+# default:
+CONFIG_ESP_WIFI_GMAC_SUPPORT=y
+# default:
+CONFIG_ESP_WIFI_SOFTAP_SUPPORT=y
+# default:
+CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM=7
+# default:
+CONFIG_ESP_WIFI_MBEDTLS_CRYPTO=y
+# default:
+CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT=y
+# default:
+CONFIG_ESP_WIFI_TX_HETB_QUEUE_NUM=3
+# default:
+CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT=y
+# end of Wi-Fi
+
+#
+# Wi-Fi Remote
+#
+# default:
+CONFIG_ESP_WIFI_REMOTE_IN_IDF=y
+# default:
+CONFIG_ESP_WIFI_REMOTE_ENABLED=y
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32S2 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32C3 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32S3 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32C2 is not set
+# default:
+CONFIG_SLAVE_IDF_TARGET_ESP32C6=y
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32C5 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32C61 is not set
+# default:
+# CONFIG_SLAVE_IDF_TARGET_ESP32S31 is not set
+# default:
+CONFIG_SLAVE_SOC_WIFI_SUPPORTED=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_WAPI_SUPPORT=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_CSI_SUPPORT=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_MESH_SUPPORT=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH=12
+# default:
+CONFIG_SLAVE_SOC_WIFI_HW_TSF=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_FTM_SUPPORT=y
+# default:
+CONFIG_SLAVE_FREERTOS_UNICORE=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_GCMP_SUPPORT=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_TXOP_SUPPORT=y
+# default:
+CONFIG_SLAVE_IDF_TARGET_ARCH_RISCV=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_HE_SUPPORT=y
+# default:
+CONFIG_SLAVE_SOC_WIFI_MAC_VERSION_NUM=2
+
+#
+# Wi-Fi configuration
+#
+# default:
+CONFIG_WIFI_RMT_STATIC_RX_BUFFER_NUM=10
+# default:
+CONFIG_WIFI_RMT_DYNAMIC_RX_BUFFER_NUM=32
+# default:
+# CONFIG_WIFI_RMT_STATIC_TX_BUFFER is not set
+# default:
+CONFIG_WIFI_RMT_DYNAMIC_TX_BUFFER=y
+# default:
+CONFIG_WIFI_RMT_TX_BUFFER_TYPE=1
+# default:
+CONFIG_WIFI_RMT_DYNAMIC_TX_BUFFER_NUM=32
+# default:
+CONFIG_WIFI_RMT_STATIC_RX_MGMT_BUFFER=y
+# default:
+# CONFIG_WIFI_RMT_DYNAMIC_RX_MGMT_BUFFER is not set
+# default:
+CONFIG_WIFI_RMT_DYNAMIC_RX_MGMT_BUF=0
+# default:
+CONFIG_WIFI_RMT_RX_MGMT_BUF_NUM_DEF=5
+# default:
+# CONFIG_WIFI_RMT_CSI_ENABLED is not set
+# default:
+CONFIG_WIFI_RMT_AMPDU_TX_ENABLED=y
+# default:
+CONFIG_WIFI_RMT_TX_BA_WIN=6
+# default:
+CONFIG_WIFI_RMT_AMPDU_RX_ENABLED=y
+# default:
+CONFIG_WIFI_RMT_RX_BA_WIN=6
+# default:
+CONFIG_WIFI_RMT_NVS_ENABLED=y
+# default:
+CONFIG_WIFI_RMT_SOFTAP_BEACON_MAX_LEN=752
+# default:
+CONFIG_WIFI_RMT_MGMT_SBUF_NUM=32
+# default:
+CONFIG_WIFI_RMT_IRAM_OPT=y
+# default:
+CONFIG_WIFI_RMT_EXTRA_IRAM_OPT=y
+# default:
+CONFIG_WIFI_RMT_RX_IRAM_OPT=y
+# default:
+CONFIG_WIFI_RMT_ENABLE_WPA3_SAE=y
+# default:
+CONFIG_WIFI_RMT_ENABLE_SAE_H2E=y
+# default:
+CONFIG_WIFI_RMT_ENABLE_SAE_PK=y
+# default:
+CONFIG_WIFI_RMT_SOFTAP_SAE_SUPPORT=y
+# default:
+CONFIG_WIFI_RMT_ENABLE_WPA3_OWE_STA=y
+# default:
+CONFIG_WIFI_RMT_WPA3_COMPATIBLE_SUPPORT=y
+# default:
+CONFIG_WIFI_RMT_ENABLE_WPA3_OWE_SOFTAP=y
+# default:
+# CONFIG_WIFI_RMT_PASN_SUPPORT is not set
+# default:
+CONFIG_WIFI_RMT_SLP_IRAM_OPT=y
+# default:
+CONFIG_WIFI_RMT_SLP_DEFAULT_MIN_ACTIVE_TIME=50
+# default:
+CONFIG_WIFI_RMT_BSS_MAX_IDLE_SUPPORT=y
+# default:
+CONFIG_WIFI_RMT_SLP_DEFAULT_MAX_ACTIVE_TIME=10
+# default:
+CONFIG_WIFI_RMT_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME=15
+# default:
+# CONFIG_WIFI_RMT_FTM_ENABLE is not set
+# default:
+CONFIG_WIFI_RMT_STA_DISCONNECTED_PM_ENABLE=y
+# default:
+# CONFIG_WIFI_RMT_GCMP_SUPPORT is not set
+# default:
+CONFIG_WIFI_RMT_GMAC_SUPPORT=y
+# default:
+CONFIG_WIFI_RMT_SOFTAP_SUPPORT=y
+# default:
+# CONFIG_WIFI_RMT_SLP_BEACON_LOST_OPT is not set
+# default:
+CONFIG_WIFI_RMT_ESPNOW_MAX_ENCRYPT_NUM=7
+# default:
+CONFIG_WIFI_RMT_MBEDTLS_CRYPTO=y
+# default:
+CONFIG_WIFI_RMT_MBEDTLS_TLS_CLIENT=y
+# default:
+# CONFIG_WIFI_RMT_WAPI_PSK is not set
+# default:
+# CONFIG_WIFI_RMT_SUITE_B_192 is not set
+# default:
+# CONFIG_WIFI_RMT_11KV_SUPPORT is not set
+# default:
+# CONFIG_WIFI_RMT_MBO_SUPPORT is not set
+# default:
+# CONFIG_WIFI_RMT_ENABLE_ROAMING_APP is not set
+# default:
+# CONFIG_WIFI_RMT_DPP_SUPPORT is not set
+# default:
+# CONFIG_WIFI_RMT_11R_SUPPORT is not set
+# default:
+# CONFIG_WIFI_RMT_WPS_SOFTAP_REGISTRAR is not set
+# default:
+# CONFIG_WIFI_RMT_ENABLE_WIFI_TX_STATS is not set
+# default:
+# CONFIG_WIFI_RMT_ENABLE_WIFI_RX_STATS is not set
+# default:
+CONFIG_WIFI_RMT_TX_HETB_QUEUE_NUM=3
+
+#
+# WPS Configuration Options
+#
+# default:
+# CONFIG_WIFI_RMT_WPS_STRICT is not set
+# default:
+# CONFIG_WIFI_RMT_WPS_PASSPHRASE is not set
+# default:
+# CONFIG_WIFI_RMT_WPS_RECONNECT_ON_FAIL is not set
+# end of WPS Configuration Options
+
+# default:
+# CONFIG_WIFI_RMT_DEBUG_PRINT is not set
+# default:
+CONFIG_WIFI_RMT_ENTERPRISE_SUPPORT=y
+# default:
+# CONFIG_WIFI_RMT_ENT_FREE_DYNAMIC_BUFFER is not set
+# default:
+# CONFIG_WIFI_RMT_PASSIVE_HIDDEN_AP_SUPPORT is not set
+# default:
+# CONFIG_WIFI_RMT_PRIVACY_ENHANCEMENTS_ENABLED is not set
+# end of Wi-Fi configuration
+
+# default:
+CONFIG_ESP_WIFI_REMOTE_LIBRARY_HOSTED=y
+# default:
+# CONFIG_ESP_WIFI_REMOTE_LIBRARY_EPPP is not set
+# default:
+# CONFIG_ESP_WIFI_REMOTE_LIBRARY_CUSTOM is not set
+# default:
+CONFIG_ESP_WIFI_REMOTE_EAP_ENABLED=y
+# end of Wi-Fi Remote
+
+#
+# Core dump
+#
+# default:
+# CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH is not set
+# default:
+# CONFIG_ESP_COREDUMP_ENABLE_TO_UART is not set
+# default:
+CONFIG_ESP_COREDUMP_ENABLE_TO_NONE=y
+# end of Core dump
+
+#
+# FAT Filesystem support
+#
+# default:
+CONFIG_FATFS_VOLUME_COUNT=2
+# default:
+# CONFIG_FATFS_LFN_NONE is not set
+# default:
+CONFIG_FATFS_LFN_HEAP=y
+# default:
+# CONFIG_FATFS_LFN_STACK is not set
+# default:
+# CONFIG_FATFS_SECTOR_512 is not set
+# default:
+CONFIG_FATFS_SECTOR_4096=y
+# default:
+# CONFIG_FATFS_CODEPAGE_DYNAMIC is not set
+# default:
+CONFIG_FATFS_CODEPAGE_437=y
+# default:
+# CONFIG_FATFS_CODEPAGE_720 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_737 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_771 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_775 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_850 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_852 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_855 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_857 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_860 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_861 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_862 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_863 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_864 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_865 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_866 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_869 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_932 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_936 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_949 is not set
+# default:
+# CONFIG_FATFS_CODEPAGE_950 is not set
+# default:
+CONFIG_FATFS_CODEPAGE=437
+# default:
+CONFIG_FATFS_MAX_LFN=255
+# default:
+CONFIG_FATFS_API_ENCODING_ANSI_OEM=y
+# default:
+# CONFIG_FATFS_API_ENCODING_UTF_8 is not set
+# default:
+CONFIG_FATFS_FS_LOCK=0
+# default:
+CONFIG_FATFS_TIMEOUT_MS=10000
+# default:
+CONFIG_FATFS_PER_FILE_CACHE=y
+# default:
+CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS=y
+# default:
+# CONFIG_FATFS_USE_FASTSEEK is not set
+# default:
+CONFIG_FATFS_USE_STRFUNC_NONE=y
+# default:
+# CONFIG_FATFS_USE_STRFUNC_WITHOUT_CRLF_CONV is not set
+# default:
+# CONFIG_FATFS_USE_STRFUNC_WITH_CRLF_CONV is not set
+# default:
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=0
+# default:
+# CONFIG_FATFS_IMMEDIATE_FSYNC is not set
+# default:
+# CONFIG_FATFS_USE_LABEL is not set
+# default:
+CONFIG_FATFS_LINK_LOCK=y
+# default:
+CONFIG_FATFS_USE_DYN_BUFFERS=y
+
+#
+# File system free space calculation behavior
+#
+# default:
+CONFIG_FATFS_DONT_TRUST_FREE_CLUSTER_CNT=0
+# default:
+CONFIG_FATFS_DONT_TRUST_LAST_ALLOC=0
+# end of File system free space calculation behavior
+# end of FAT Filesystem support
 
 #
 # FreeRTOS
@@ -2069,6 +2981,8 @@ CONFIG_FREERTOS_TASK_NOTIFICATION_ARRAY_ENTRIES=1
 #
 # Port
 #
+# default:
+CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER=y
 # default:
 # CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK is not set
 # default:
@@ -2138,8 +3052,6 @@ CONFIG_HAL_GPIO_USE_ROM_IMPL=y
 #
 # Heap memory debugging
 #
-# default:
-CONFIG_HEAP_HAS_EXEC_HEAP=y
 # default:
 CONFIG_HEAP_POISONING_DISABLED=y
 # default:
@@ -2950,6 +3862,51 @@ CONFIG_MBEDTLS_PKCS1_V21=y
 # end of mbedTLS
 
 #
+# NVS
+#
+# default:
+# CONFIG_NVS_ENCRYPTION is not set
+# default:
+# CONFIG_NVS_ASSERT_ERROR_CHECK is not set
+# default:
+# CONFIG_NVS_LEGACY_DUP_KEYS_COMPATIBILITY is not set
+# default:
+# CONFIG_NVS_BDL_STACK is not set
+# default:
+# CONFIG_NVS_FLASH_VERIFY_ERASE is not set
+# end of NVS
+
+#
+# OpenThread
+#
+# default:
+# CONFIG_OPENTHREAD_ENABLED is not set
+
+#
+# OpenThread Spinel
+#
+# default:
+# CONFIG_OPENTHREAD_SPINEL_ONLY is not set
+# end of OpenThread Spinel
+
+# default:
+# CONFIG_OPENTHREAD_DEBUG is not set
+# end of OpenThread
+
+#
+# Protocomm
+#
+# default:
+# CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0 is not set
+# default:
+# CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1 is not set
+# default:
+CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2=y
+# default:
+CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_PATCH_VERSION=y
+# end of Protocomm
+
+#
 # PThreads
 #
 # default:
@@ -2969,6 +3926,13 @@ CONFIG_PTHREAD_TASK_CORE_DEFAULT=-1
 # default:
 CONFIG_PTHREAD_TASK_NAME_DEFAULT="pthread"
 # end of PThreads
+
+#
+# SD Protocol Layer Configuration
+#
+# default:
+CONFIG_SD_ENABLE_SDIO_SUPPORT=y
+# end of SD Protocol Layer Configuration
 
 #
 # MMU Config
@@ -3067,7 +4031,9 @@ CONFIG_SPI_FLASH_VENDOR_GD_SUPPORT_ENABLED=y
 # CONFIG_SPI_FLASH_SUPPORT_ISSI_CHIP is not set
 # default:
 # CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP is not set
+# default:
 CONFIG_SPI_FLASH_SUPPORT_GD_CHIP=y
+# default:
 # CONFIG_SPI_FLASH_SUPPORT_WINBOND_CHIP is not set
 # default:
 # CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP is not set
@@ -3078,6 +4044,109 @@ CONFIG_SPI_FLASH_SUPPORT_GD_CHIP=y
 # default:
 CONFIG_SPI_FLASH_ENABLE_ENCRYPTED_READ_WRITE=y
 # end of SPI Flash driver
+
+#
+# SPIFFS Configuration
+#
+# default:
+CONFIG_SPIFFS_MAX_PARTITIONS=3
+
+#
+# SPIFFS Cache Configuration
+#
+# default:
+CONFIG_SPIFFS_CACHE=y
+# default:
+CONFIG_SPIFFS_CACHE_WR=y
+# default:
+# CONFIG_SPIFFS_CACHE_STATS is not set
+# end of SPIFFS Cache Configuration
+
+# default:
+CONFIG_SPIFFS_PAGE_CHECK=y
+# default:
+CONFIG_SPIFFS_GC_MAX_RUNS=10
+# default:
+# CONFIG_SPIFFS_GC_STATS is not set
+# default:
+CONFIG_SPIFFS_PAGE_SIZE=256
+# default:
+CONFIG_SPIFFS_OBJ_NAME_LEN=32
+# default:
+# CONFIG_SPIFFS_FOLLOW_SYMLINKS is not set
+# default:
+CONFIG_SPIFFS_USE_MAGIC=y
+# default:
+CONFIG_SPIFFS_USE_MAGIC_LENGTH=y
+# default:
+CONFIG_SPIFFS_META_LENGTH=4
+# default:
+CONFIG_SPIFFS_USE_MTIME=y
+
+#
+# Debug Configuration
+#
+# default:
+# CONFIG_SPIFFS_DBG is not set
+# default:
+# CONFIG_SPIFFS_API_DBG is not set
+# default:
+# CONFIG_SPIFFS_GC_DBG is not set
+# default:
+# CONFIG_SPIFFS_CACHE_DBG is not set
+# default:
+# CONFIG_SPIFFS_CHECK_DBG is not set
+# default:
+# CONFIG_SPIFFS_TEST_VISUALISATION is not set
+# end of Debug Configuration
+# end of SPIFFS Configuration
+
+#
+# TCP Transport
+#
+
+#
+# Websocket
+#
+# default:
+CONFIG_WS_TRANSPORT=y
+# default:
+CONFIG_WS_BUFFER_SIZE=1024
+# default:
+# CONFIG_WS_DYNAMIC_BUFFER is not set
+# end of Websocket
+# end of TCP Transport
+
+#
+# Ultra Low Power (ULP) Co-processor
+#
+# default:
+# CONFIG_ULP_COPROC_ENABLED is not set
+
+#
+# ULP Debugging Options
+#
+# end of ULP Debugging Options
+# end of Ultra Low Power (ULP) Co-processor
+
+#
+# Unity unit testing library
+#
+# default:
+CONFIG_UNITY_ENABLE_FLOAT=y
+# default:
+CONFIG_UNITY_ENABLE_DOUBLE=y
+# default:
+# CONFIG_UNITY_ENABLE_64BIT is not set
+# default:
+# CONFIG_UNITY_ENABLE_COLOR is not set
+# default:
+CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER=y
+# default:
+# CONFIG_UNITY_ENABLE_FIXTURE is not set
+# default:
+# CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL is not set
+# end of Unity unit testing library
 
 #
 # Virtual file system
@@ -3110,79 +4179,16 @@ CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS=1
 CONFIG_VFS_INITIALIZE_DEV_NULL=y
 # end of Virtual file system
 
-CONFIG_CHERRYUSB=y
-# CONFIG_CHERRYUSB_DEVICE is not set
-CONFIG_CHERRYUSB_HOST=y
-# CONFIG_CHERRYUSB_HOST_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_BL is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_HPM is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_AIC is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_MCX is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_NUC980 is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_MA35D0 is not set
-# CONFIG_CHERRYUSB_HOST_EHCI_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_DWC2_ST is not set
-CONFIG_CHERRYUSB_HOST_DWC2_ESP=y
-# CONFIG_CHERRYUSB_HOST_DWC2_KENDRYTE is not set
-# CONFIG_CHERRYUSB_HOST_DWC2_HC is not set
-# CONFIG_CHERRYUSB_HOST_DWC2_NATION is not set
-# CONFIG_CHERRYUSB_HOST_DWC2_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_MUSB_ES is not set
-# CONFIG_CHERRYUSB_HOST_MUSB_SUNXI is not set
-# CONFIG_CHERRYUSB_HOST_MUSB_BK is not set
-# CONFIG_CHERRYUSB_HOST_MUSB_SIFLI is not set
-# CONFIG_CHERRYUSB_HOST_MUSB_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_PUSB2 is not set
-# CONFIG_CHERRYUSB_HOST_XHCI_PHYTIUM is not set
-# CONFIG_CHERRYUSB_HOST_XHCI_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_KINETIS_MCX is not set
-# CONFIG_CHERRYUSB_HOST_KINETIS_MM32 is not set
-# CONFIG_CHERRYUSB_HOST_KINETIS_CUSTOM is not set
-# CONFIG_CHERRYUSB_HOST_RP2040 is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CDC_ACM is not set
-CONFIG_CHERRYUSB_HOST_HID=y
-# default:
-# CONFIG_CHERRYUSB_HOST_MSC is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CDC_ECM is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CDC_RNDIS is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CDC_NCM is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_VIDEO is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_AUDIO is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_ASIX is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_RTL8152 is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_FTDI is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CH34X is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_CP210X is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_PL2303 is not set
-# default:
-# CONFIG_CHERRYUSB_HOST_AOA is not set
-# default:
-CONFIG_USBHOST_PSC_PRIO=0
-# default:
-CONFIG_USBHOST_PSC_STACKSIZE=4096
-# default:
-CONFIG_USBHOST_REQUEST_BUFFER_LEN=512
-# default:
-CONFIG_USBHOST_CONTROL_TRANSFER_TIMEOUT=500
-
 #
-# Select USB host template, please select class driver first
+# Wear Levelling
 #
 # default:
-CONFIG_TEST_USBH_HID=0
-# end of Select USB host template, please select class driver first
+# CONFIG_WL_SECTOR_SIZE_512 is not set
+# default:
+CONFIG_WL_SECTOR_SIZE_4096=y
+# default:
+CONFIG_WL_SECTOR_SIZE=4096
+# end of Wear Levelling
 # end of Component config
 
 # default:
@@ -3205,10 +4211,10 @@ CONFIG_LOG_BOOTLOADER_LEVEL=3
 # CONFIG_FLASHMODE_QOUT is not set
 CONFIG_FLASHMODE_DIO=y
 # CONFIG_FLASHMODE_DOUT is not set
-CONFIG_MONITOR_BAUD=4000000
-# CONFIG_OPTIMIZATION_LEVEL_DEBUG is not set
-# CONFIG_COMPILER_OPTIMIZATION_LEVEL_DEBUG is not set
-# CONFIG_COMPILER_OPTIMIZATION_DEFAULT is not set
+CONFIG_MONITOR_BAUD=115200
+CONFIG_OPTIMIZATION_LEVEL_DEBUG=y
+CONFIG_COMPILER_OPTIMIZATION_LEVEL_DEBUG=y
+CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y
 # CONFIG_OPTIMIZATION_LEVEL_RELEASE is not set
 # CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE is not set
 CONFIG_OPTIMIZATION_ASSERTIONS_ENABLED=y
@@ -3221,9 +4227,18 @@ CONFIG_STACK_CHECK_NONE=y
 # CONFIG_STACK_CHECK_STRONG is not set
 # CONFIG_STACK_CHECK_ALL is not set
 # CONFIG_WARN_WRITE_STRINGS is not set
+# CONFIG_ANA_CMPR_ISR_IRAM_SAFE is not set
+# CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE is not set
+# CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE is not set
+# CONFIG_CAM_CTLR_DVP_CAM_ISR_IRAM_SAFE is not set
+# CONFIG_GPTIMER_ISR_IRAM_SAFE is not set
+# CONFIG_MCPWM_ISR_IRAM_SAFE is not set
 # CONFIG_EVENT_LOOP_PROFILING is not set
 CONFIG_POST_EVENTS_FROM_ISR=y
 CONFIG_POST_EVENTS_FROM_IRAM_ISR=y
+CONFIG_GDBSTUB_SUPPORT_TASKS=y
+CONFIG_GDBSTUB_MAX_TASKS=32
+# CONFIG_OTA_ALLOW_HTTP is not set
 CONFIG_PERIPH_CTRL_FUNC_IN_IRAM=y
 CONFIG_BROWNOUT_DET=y
 CONFIG_BROWNOUT_DET_LVL_SEL_7=y
@@ -3231,6 +4246,7 @@ CONFIG_BROWNOUT_DET_LVL_SEL_7=y
 # CONFIG_BROWNOUT_DET_LVL_SEL_5 is not set
 CONFIG_BROWNOUT_DET_LVL=7
 CONFIG_ESP_SYSTEM_BROWNOUT_INTR=y
+# CONFIG_LCD_DSI_ISR_IRAM_SAFE is not set
 CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF=y
 # CONFIG_NEWLIB_STDOUT_LINE_ENDING_LF is not set
 # CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR is not set
@@ -3241,35 +4257,62 @@ CONFIG_NEWLIB_TIME_SYSCALL_USE_RTC_HRT=y
 # CONFIG_NEWLIB_TIME_SYSCALL_USE_RTC is not set
 # CONFIG_NEWLIB_TIME_SYSCALL_USE_HRT is not set
 # CONFIG_NEWLIB_TIME_SYSCALL_USE_NONE is not set
-# CONFIG_CONSOLE_UART_DEFAULT is not set
-CONFIG_CONSOLE_UART_CUSTOM=y
+CONFIG_CONSOLE_UART_DEFAULT=y
+# CONFIG_CONSOLE_UART_CUSTOM is not set
 # CONFIG_CONSOLE_UART_NONE is not set
 # CONFIG_ESP_CONSOLE_UART_NONE is not set
 CONFIG_CONSOLE_UART=y
-CONFIG_CONSOLE_UART_CUSTOM_NUM_0=y
-# CONFIG_CONSOLE_UART_CUSTOM_NUM_1 is not set
 CONFIG_CONSOLE_UART_NUM=0
-CONFIG_CONSOLE_UART_TX_GPIO=37
-CONFIG_CONSOLE_UART_RX_GPIO=38
-CONFIG_CONSOLE_UART_BAUDRATE=4000000
-# CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT is not set
-# CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE is not set
-# CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is not set
+CONFIG_CONSOLE_UART_BAUDRATE=115200
+CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT=y
+CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE=y
+CONFIG_ESP_SYSTEM_MEMPROT_FEATURE=y
+# CONFIG_ESP_SYSTEM_PMP_LP_CORE_RESERVE_MEM_EXECUTABLE is not set
 CONFIG_SYSTEM_EVENT_QUEUE_SIZE=32
 CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE=2304
 CONFIG_MAIN_TASK_STACK_SIZE=3584
-CONFIG_INT_WDT=y
-CONFIG_INT_WDT_TIMEOUT_MS=300
-# CONFIG_INT_WDT_CHECK_CPU1 is not set
-CONFIG_TASK_WDT=y
-CONFIG_ESP_TASK_WDT=y
-# CONFIG_TASK_WDT_PANIC is not set
-CONFIG_TASK_WDT_TIMEOUT_S=5
-CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0=y
-# CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1 is not set
+# CONFIG_INT_WDT is not set
 # CONFIG_ESP32_DEBUG_STUBS_ENABLE is not set
 CONFIG_IPC_TASK_STACK_SIZE=1024
 CONFIG_TIMER_TASK_STACK_SIZE=3584
+# CONFIG_ESP32_APPTRACE_ENABLE is not set
+CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM=10
+CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+CONFIG_ESP32_WIFI_TX_BUFFER_TYPE=1
+CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM=32
+CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED=y
+CONFIG_ESP32_WIFI_TX_BA_WIN=6
+CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED=y
+CONFIG_ESP32_WIFI_RX_BA_WIN=6
+CONFIG_ESP32_WIFI_NVS_ENABLED=y
+CONFIG_ESP32_WIFI_SOFTAP_BEACON_MAX_LEN=752
+CONFIG_ESP32_WIFI_MGMT_SBUF_NUM=32
+CONFIG_ESP32_WIFI_IRAM_OPT=y
+CONFIG_ESP32_WIFI_RX_IRAM_OPT=y
+CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE=y
+CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA=y
+CONFIG_WPA_MBEDTLS_CRYPTO=y
+CONFIG_WPA_MBEDTLS_TLS_CLIENT=y
+CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM=10
+CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+CONFIG_ESP32_WIFI_TX_BUFFER_TYPE=1
+CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM=32
+CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED=y
+CONFIG_ESP32_WIFI_TX_BA_WIN=6
+CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED=y
+CONFIG_ESP32_WIFI_RX_BA_WIN=6
+CONFIG_ESP32_WIFI_NVS_ENABLED=y
+CONFIG_ESP32_WIFI_SOFTAP_BEACON_MAX_LEN=752
+CONFIG_ESP32_WIFI_MGMT_SBUF_NUM=32
+CONFIG_ESP32_WIFI_IRAM_OPT=y
+CONFIG_ESP32_WIFI_RX_IRAM_OPT=y
+CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE=y
+CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA=y
+CONFIG_WPA_MBEDTLS_CRYPTO=y
+CONFIG_WPA_MBEDTLS_TLS_CLIENT=y
+# CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH is not set
+# CONFIG_ESP32_ENABLE_COREDUMP_TO_UART is not set
+CONFIG_ESP32_ENABLE_COREDUMP_TO_NONE=y
 CONFIG_TIMER_TASK_PRIORITY=1
 CONFIG_TIMER_TASK_STACK_DEPTH=2048
 CONFIG_TIMER_QUEUE_LENGTH=10

@@ -56,7 +56,7 @@
 
 	memory@48000000 {
 		device_type = "memory";
-		reg = <0x48000000 0x01000000>;
+		reg = <0x48000000 0x01F00000>;
 	};
 
 	soc {

@@ -1,0 +1,18 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# 0x000000 - 0x002000 : Reserved (8KB)
+# 0x002000 - 0x008000 : Bootloader (24KB)
+# 0x008000 - 0x009000 : Partition table (4KB)
+# 0x009000 - 0x00f000 : NVS (24KB)
+# 0x00f000 - 0x010000 : PHY init (4KB)
+# 0x010000 - 0x090000 : Application (0.5MB) — boot shim is ~220 KB, plenty of room
+# 0x090000 - 0x710000 : Kernel Image (6.5MB)
+# 0x710000 - 0xF10000 : Rootfs squashfs (8MB) — MUST be power-of-2: physmap-core mtd-rom
+#                         caps reg-size at BIT(fls64(size)-1).
+# 0xF10000 - 0xF20000 : DTB (64KB)
+
+nvs,      data, nvs,     0x9000,   0x6000,
+phy_init, data, phy,     0xf000,   0x1000,
+factory,  app,  factory, 0x10000,  0x80000,
+kernel,   data, 0x58,    0x90000,  0x680000,
+rootfs,   data, 0x58,    0x710000, 0x800000,
+dtb,      data, 0x58,    0xF10000, 0x10000,

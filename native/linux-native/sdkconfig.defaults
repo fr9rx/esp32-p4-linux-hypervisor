@@ -1,0 +1,31 @@
+CONFIG_IDF_TARGET="esp32p4"
+
+# Badge is ESP32-P4 rev v1.0
+CONFIG_ESP32P4_SELECTS_REV_LESS_V3=y
+CONFIG_ESP32P4_REV_MIN_0=y
+
+# 16MB flash, custom partition table
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+
+# PSRAM: enable and init at boot so the kernel can use it
+# No XIP — the boot shim runs from flash; PSRAM is for the kernel
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_BOOT_INIT=y
+# 200M is what the badge uses. On this board it produced repeated
+# 'E psram_mspi: MSPI PSRAM error' and a hard reset ~1s into the kernel,
+# which runs from PSRAM. 120M for margin.
+# 120M does not exist on P4; the choice is 250/200/80/20.
+CONFIG_SPIRAM_SPEED_80M=y
+# Don't add PSRAM to the heap at all — PSRAM starts at 0x48000000 which
+# is exactly where we load the kernel. Any heap allocation there would
+# get overwritten. MEMMAP leaves PSRAM accessible as raw memory only.
+CONFIG_SPIRAM_USE_MEMMAP=y
+
+# Disable watchdogs — we hand off to the kernel and never return
+CONFIG_TASK_WDT=n
+CONFIG_ESP_TASK_WDT_EN=n
+CONFIG_INT_WDT=n
+CONFIG_SPIRAM_MEMTEST=n

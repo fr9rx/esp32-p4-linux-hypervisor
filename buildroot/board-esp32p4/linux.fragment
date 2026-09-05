@@ -1,0 +1,45 @@
+# ESP32-P4 hypervisor guest.
+#
+# 32-bit. This MUST be here: BR2_LINUX_KERNEL_DEFCONFIG is "nommu_virt", and
+# arch/riscv/configs/nommu_virt_defconfig does not set the XLEN at all, so
+# kconfig falls back to CONFIG_ARCH_RV64I. Buildroot does not force it either
+# despite BR2_RISCV_32=y. A 64-bit .config still builds with the rv32
+# toolchain, and the only visible damage is that `li` assembles as lui+addiw --
+# opcode 0x1b, RV64-only -- so the kernel dies on its third instruction with an
+# illegal instruction at 0x480000d2. Ask how I know.
+CONFIG_ARCH_RV32I=y
+CONFIG_MTD=y
+CONFIG_MTD_BLOCK=y
+CONFIG_MTD_ROM=y
+CONFIG_MTD_PHYSMAP=y
+CONFIG_MTD_PHYSMAP_OF=y
+# Root filesystem is a romfs image that the monitor copies from the "rootfs"
+# flash partition into a reserved PSRAM window, which the DTB exposes as an
+# mtd-rom device. That gets the rootfs out of the initramfs ramfs, which was
+# pinning ~2.4 MB of a 31 MB machine for the whole uptime, and takes the cpio
+# back out of the kernel image.
+#
+# ROMFS_FS sits inside "if MISC_FILESYSTEMS" in fs/Kconfig, so without the
+# first symbol here the romfs options are not offered and silently vanish.
+CONFIG_MISC_FILESYSTEMS=y
+CONFIG_ROMFS_FS=y
+CONFIG_ROMFS_BACKED_BY_MTD=y
+# The DTB's bootargs is ignored (CMDLINE_FORCE), so this string is the one that
+# counts. root=mtd0 is handled directly in init/do_mounts.c, no block layer.
+CONFIG_CMDLINE="earlycon=uart8250,mmio,0x10000000 console=ttyS0 root=mtd0 rootfstype=romfs ro"
+CONFIG_CMDLINE_FORCE=y
+# Raise the page allocator's maximum allocation order from 10 (4 MB) to 11
+# (8 MB). Needs patches/linux/0002-*, because riscv is one of the few
+# architectures that does not define ARCH_FORCE_MAX_ORDER at all.
+#
+# binfmt_flat has no demand paging: every exec is ONE physically contiguous
+# allocation covering text + data + bss + stack, so MAX_PAGE_ORDER is a hard
+# ceiling on program size. GNU ld is 5.7 MB and does not fit under 4 MB.
+#
+# Measured before changing it: /proc/buddyinfo showed four free order-10
+# blocks at boot and still four after real work, so the ceiling was the cap
+# itself rather than fragmentation.
+#
+# 11 rather than higher because pageblock_order follows MAX_PAGE_ORDER, and
+# on a 29 MB machine an 8 MB pageblock is already a quarter of memory.
+CONFIG_ARCH_FORCE_MAX_ORDER=11

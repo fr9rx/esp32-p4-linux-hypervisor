@@ -1,0 +1,21 @@
+# ESP32-P4 hypervisor guest: shrink uClibc.
+#
+# Every byte saved here comes off the per-process allocation, because
+# binfmt_flat copies text+data+bss+stack into one contiguous power-of-two block
+# per exec, and busybox is statically linked.
+#
+# long double on riscv32 is IEEE binary128, which has no hardware support, so
+# supporting %Lf in printf drags in the soft-quad routines. nm --size-sort put
+# __addtf3, __subtf3, __multf3 and __divtf3 at ~18 KB combined, reached only
+# through uClibc's _fpmaxtostr. Nothing in this rootfs prints a long double.
+# UCLIBC_HAS_LONG_DOUBLE_MATH is not set
+
+# register_printf_function() and friends. Neither busybox nor anything else
+# here installs a custom printf conversion.
+# UCLIBC_HAS_GLIBC_CUSTOM_PRINTF is not set
+
+# stdio buffers. _fixed_buffers is 8192 bytes of .bss, two BUFSIZ-sized
+# buffers, and .bss counts toward the single contiguous block binfmt_flat
+# allocates per exec. 1024 is plenty for a serial console.
+# UCLIBC_HAS_STDIO_BUFSIZ_4096 is not set
+UCLIBC_HAS_STDIO_BUFSIZ_1024=y

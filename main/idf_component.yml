@@ -1,0 +1,10 @@
+## IDF Component Manager Manifest
+dependencies:
+  idf: ">=5.3"
+  # ESP-IDF v6.1-beta1 has no USB host stack: components/usb is gone,
+  # usb_host.h exists nowhere in the install, and the in-tree
+  # examples/peripherals/usb/host/* still reference a usb_host_hid that cannot
+  # resolve. CherryUSB brings its own DWC2 host driver and HID class, and its
+  # Espressif glue needs only esp_private/usb_phy.h from the old component --
+  # which is vendored back in components/usb. See that CMakeLists.
+  cherry-embedded/cherryusb: "~1.5.2"

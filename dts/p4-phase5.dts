@@ -1,42 +1,31 @@
 /*
- * ESP32-P4 hypervisor guest — PHASE 4  (the milestone)
+ * ESP32-P4 hypervisor guest - PHASE 5
  *
- * Adds: emulated PLIC + emulated 16550 with working input.
+ * Phase 4 plus a root filesystem that is not in RAM.
  *
- * Expected result: full boot to a shell prompt you can type into.
+ * The monitor copies a romfs image out of the "rootfs" flash partition into a
+ * reserved PSRAM window at 0x49D00000 and this node describes that window as
+ * an mtd-rom device, so the kernel mounts / from it with root=mtd0. That
+ * replaces the initramfs, which pinned ~2.4 MB of ramfs for the whole uptime
+ * and carried a second copy of the rootfs inside the kernel image.
  *
- * New traps for this phase:
+ * The window is above memory{} and below the DTB, all three inside the single
+ * PMP grant over 0x48000000-0x4A000000:
  *
- *   PLIC at 0x0c000000:
- *     0x000000 + 4*n   priority of source n        (accept, ignore)
- *     0x001000         pending bitmap              (read from shadow)
- *     0x002000         enable bitmap, context 0    (store to shadow)
- *     0x200000         threshold, context 0        (accept, ignore)
- *     0x200004         claim/complete, context 0
- *                        read  -> highest pending enabled source, clears pending
- *                        write -> completion, re-arm that source
+ *   0x48000000  29 MB   memory{}         Linux
+ *   0x49D00000   2 MB   rom@49d00000     romfs image (~1.1 MB used)
+ *   0x49F00000   1 MB   -                DTB
  *
- *   16550 at 0x10000000 (reg-shift 0, so one byte per register):
- *     0x00 RBR/THR  read = next RX byte  |  write = TX byte
- *     0x01 IER      bit0 = RX data available int, bit1 = TX empty int
- *     0x02 IIR      read: 0x04 = RX ready, 0x02 = TX empty, 0x01 = none
- *     0x03 LCR      accept and ignore (DLAB handling optional)
- *     0x05 LSR      bit0 = RX data ready, bit5 = THR empty, bit6 = TX idle
- *                   Always report bits 5 and 6 set: TX never blocks.
- *
- * The UART is what makes this phase different from every earlier one:
- * it needs INPUT, which needs an interrupt, which is why the PLIC has to
- * work first. When a byte lands on the real UART, set LSR bit 0, mark
- * source 10 pending in the shadow PLIC, and inject MEIP.
+ * No new traps for this phase: the guest reads the romfs with ordinary loads
+ * from granted memory, so the monitor never sees them.
  */
-
 /dts-v1/;
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
 	compatible = "espressif,esp32p4";
-	model = "ESP32-P4 hypervisor guest";
+	model = "ESP32-P4 hypervisor guest (phase 5)";
 
 	chosen {
 		/*
@@ -45,7 +34,7 @@
 		 * keep_bootcon -> keep BOTH active, so if the handover breaks
 		 *                 you still see output. Drop it once stable.
 		 */
-		bootargs = "earlycon=uart8250,mmio,0x10000000 console=ttyS0,115200 rdinit=/sbin/init keep_bootcon";
+		bootargs = "earlycon=uart8250,mmio,0x10000000 console=ttyS0 root=mtd0 rootfstype=romfs ro";
 		stdout-path = &uart0;
 	};
 
@@ -76,7 +65,12 @@
 
 	memory@48000000 {
 		device_type = "memory";
-		reg = <0x48000000 0x01F00000>;
+	/*
+		 * 29 MB. The romfs window and the DTB take the rest of the
+		 * 32 MB grant and must stay outside this node, or Linux will
+		 * allocate over the filesystem it is running from.
+		 */
+		reg = <0x48000000 0x01D00000>;
 	};
 
 	soc {
@@ -110,6 +104,19 @@
 			interrupts-extended = <&cpu0_intc 11>;
 		};
 
+
+		/*
+		 * physmap-core.c binds "mtd-rom" and requires bank-width. On a
+		 * NOMMU kernel its ioremap is the identity, so reads land
+		 * straight on the PSRAM window the monitor filled.
+		 */
+		rootfs: rom@49d00000 {
+			compatible = "mtd-rom";
+			reg = <0x49D00000 0x00200000>;
+			bank-width = <4>;
+			device-width = <1>;
+			linux,mtd-name = "rootfs";
+		};
 		uart0: serial@10000000 {
 			compatible = "ns16550a";
 			reg = <0x10000000 0x100>;
@@ -117,7 +124,7 @@
 			/* one byte between registers — simplest to emulate */
 			reg-shift = <0>;
 			reg-io-width = <1>;
-
+l
 			/*
 			 * Baud is fiction: your monitor forwards bytes to the
 			 * real UART0, which the ROM already set to 115200.

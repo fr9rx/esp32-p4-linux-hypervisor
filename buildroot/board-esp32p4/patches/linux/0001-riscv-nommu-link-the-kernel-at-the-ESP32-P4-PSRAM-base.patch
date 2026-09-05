@@ -1,0 +1,44 @@
+Link the NOMMU rv32 kernel at the ESP32-P4's PSRAM base.
+
+This is the one kernel source change the guest needs, and it has to be a
+source patch rather than a config option: CONFIG_PAGE_OFFSET is a promptless
+`hex` symbol with three hardcoded defaults (arch/riscv/Kconfig:239), so no
+defconfig, fragment or hand-edit of .config survives `olddefconfig`. Setting
+it is only possible by changing the default.
+
+It is also load-bearing. For !MMU, arch/riscv/include/asm/pgtable.h:25 makes
+KERNEL_LINK_ADDR equal PAGE_OFFSET, and vmlinux.lds.S:15,33 links the image at
+that address. Mainline's 0x80000000 is not where this board's RAM is -- the
+P4's PSRAM window starts at 0x48000000 -- so an unpatched kernel starts
+executing at 0x48000000 where the monitor loaded it, runs the PC-relative
+early setup, and then takes its first absolute jump into 0x80000000 and dies:
+
+    W: guest has taken no trap for 5 s -- wedged?
+    15: cause=1 epc=0x80006310 tval=0x80006310 priv=3 insn=0x00000000/0
+
+with an earlier store fault to 0x801dc000 in the same trace. Both addresses
+are outside the guest's 0x48000000-0x49F00000 window, so the monitor faults
+them and there is nowhere to vector to.
+
+How to tell which kernel you have without booting it: count absolute words in
+each range. A correctly linked Image is dominated by 0x48xxxxxx (16403 vs 765
+words); an unpatched one by 0x80xxxxxx (10325 vs 5941).
+
+This patch previously existed only as a hand-edit inside
+output/build/linux-6.8-rc1/, so `rm -rf output` silently produced a kernel
+that builds, flashes and boots far enough to look plausible. It lives here now
+so that a clean tree reproduces a working guest.
+
+Signed-off-by: nobody <nobody@example.com>
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -239,7 +239,7 @@
+ config PAGE_OFFSET
+ 	hex
+ 	default 0xC0000000 if 32BIT && MMU
+-	default 0x80000000 if !MMU
++	default 0x48000000 if !MMU
+ 	default 0xff60000000000000 if 64BIT
+ 
+ config KASAN_SHADOW_OFFSET

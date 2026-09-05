@@ -1,0 +1,70 @@
+From: esp32-p4-emulator board support
+Subject: [PATCH] riscv: allow ARCH_FORCE_MAX_ORDER to be configured
+
+The buddy allocator caps a single allocation at MAX_PAGE_ORDER, which
+defaults to 10 -- 4 MB with 4 kB pages:
+
+    /* include/linux/mmzone.h */
+    #ifndef CONFIG_ARCH_FORCE_MAX_ORDER
+    #define MAX_PAGE_ORDER 10
+    #else
+    #define MAX_PAGE_ORDER CONFIG_ARCH_FORCE_MAX_ORDER
+    #endif
+
+arc, arm, arm64, powerpc and others define ARCH_FORCE_MAX_ORDER so the cap
+can be raised. riscv does not, so on riscv the 4 MB limit cannot be changed
+from the configuration at all.
+
+That matters on NOMMU. binfmt_flat has no demand paging: it makes one
+physically contiguous allocation per exec, sized text + data + bss + stack,
+so the largest program that can ever run is bounded by MAX_PAGE_ORDER. On
+this board it made GNU ld (5.7 MB) unrunnable, and file(1) failed with
+
+    nommu: Allocation of length 7344128 from process 63 (file) failed
+    binfmt_flat: Unable to allocate RAM for process text/data, errno -12
+
+This adds the symbol for riscv with the same default the generic code
+already uses, so nothing changes unless it is set explicitly.
+
+Measured before making the change, so the cap really was the binding
+constraint rather than fragmentation -- /proc/buddyinfo on this board:
+
+    order    0    1    2    3    4    5    6    7    8    9   10
+    boot     1    2    8    8    7    7    7    2    1    2    4
+    after    0    2    0    4    4    7    9    0    2    1    4
+
+Four free order-10 blocks at boot, still four after ls -R, tar, dmesg and
+an editor. Ordinary use churns the low orders only.
+
+Signed-off-by: esp32-p4-emulator board support
+
+--- a/arch/riscv/Kconfig
++++ b/arch/riscv/Kconfig
+@@ -833,6 +833,27 @@ config RANDOMIZE_BASE
+ 
+           If unsure, say N.
+ 
++config ARCH_FORCE_MAX_ORDER
++        int "Maximum allocation order"
++        default "10"
++        range 10 15
++        help
++          The page allocator refuses allocations larger than the order set
++          here. The default of 10 means a maximum allocation of 4 MB with
++          4 kB pages.
++
++          Raising it is mainly useful on NOMMU, where binfmt_flat needs one
++          physically contiguous allocation per process covering the whole
++          program, and there is no demand paging to soften it -- so this
++          value is a hard ceiling on program size.
++
++          Note that pageblock_order follows MAX_PAGE_ORDER when huge pages
++          are not in use, so large values coarsen the allocator's
++          anti-fragmentation grouping. Do not raise it beyond what the
++          largest program on the system actually needs.
++
++          Don't change if unsure.
++
+ endmenu # "Kernel features"
+ 
+ menu "Boot options"

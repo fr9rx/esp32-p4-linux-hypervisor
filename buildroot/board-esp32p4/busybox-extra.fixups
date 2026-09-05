@@ -1,0 +1,185 @@
+# Applet set for the SECOND busybox, installed as /bin/busybox-extra.
+#
+# Why there are two busyboxes
+# ---------------------------
+# binfmt_flat allocates ONE contiguous power-of-two block per exec, and on this
+# machine order 7 (524,288) always succeeds while order 8 essentially never
+# does -- see buildroot/README.md for the measurements. The main busybox sits at
+# 520,192 bytes with a single page of headroom, so it cannot take another
+# applet at any RAM budget: the limit is contiguity, not capacity.
+#
+# A second binary sidesteps that completely. It is its own exec, so it gets its
+# own order-7 block, and the two never need to fit together. That is the one
+# thing "do not care about RAM" actually buys here.
+#
+# What goes in here rather than as a real package: everything whose GNU
+# equivalent is marked "depends on BR2_USE_MMU" in buildroot, because those
+# use fork() and cannot be built for this target at all --
+#
+#   tar        -> package/tar          NEEDS-MMU
+#   top        -> package/procps-ng    NEEDS-MMU
+#   patch      -> package/patch        NEEDS-MMU
+#   du stat expr uptime mktemp install truncate ...
+#              -> package/coreutils    NEEDS-MMU
+#
+# less, diff, gzip, bzip2, xz, sed, grep, tree, bc and which are NOT here --
+# those build as standalone GNU packages now and each gets its own allocation.
+#
+# This file is applied by board/esp32p4/busybox-fixup.sh on top of
+# `make allnoconfig`, so anything not named here is off.
+
+# ---- infrastructure. allnoconfig turns these off and nothing links without.
+CONFIG_BUSYBOX=y
+CONFIG_STATIC=y
+CONFIG_LONG_OPTS=y
+CONFIG_SHOW_USAGE=y
+CONFIG_FEATURE_USE_TERMIOS=y
+CONFIG_LFS=y
+
+# ---- no shell in this binary.
+#
+# Not a size decision -- it does not build otherwise. "Default shell" is a
+# kconfig *choice*, and a choice cannot be left empty, so `make allnoconfig`
+# selects its default member, which is ash. ash then refuses to compile:
+#
+#   shell/ash.c:330: #error "Do not even bother, ash will not run on NOMMU machine"
+#
+# The main busybox provides /bin/sh, so this binary wants no shell at all.
+CONFIG_SH_IS_NONE=y
+# CONFIG_SH_IS_ASH is not set
+# CONFIG_SH_IS_HUSH is not set
+# CONFIG_ASH is not set
+# CONFIG_HUSH is not set
+CONFIG_BASH_IS_NONE=y
+# CONFIG_BASH_IS_ASH is not set
+# CONFIG_BASH_IS_HUSH is not set
+# CONFIG_FEATURE_SH_STANDALONE is not set
+# CONFIG_FEATURE_SH_NOFORK is not set
+
+# ---- the editor. vi is the reason this binary exists; nano is also installed
+# now, but vi has no library dependency and always works.
+CONFIG_VI=y
+CONFIG_FEATURE_VI_MAX_LEN=4096
+CONFIG_FEATURE_VI_8BIT=y
+CONFIG_FEATURE_VI_COLON=y
+CONFIG_FEATURE_VI_COLON_EXPAND=y
+CONFIG_FEATURE_VI_YANKMARK=y
+CONFIG_FEATURE_VI_SEARCH=y
+CONFIG_FEATURE_VI_REGEX_SEARCH=y
+CONFIG_FEATURE_VI_USE_SIGNALS=y
+CONFIG_FEATURE_VI_DOT_CMD=y
+CONFIG_FEATURE_VI_READONLY=y
+CONFIG_FEATURE_VI_SETOPTS=y
+CONFIG_FEATURE_VI_SET=y
+CONFIG_FEATURE_VI_WIN_RESIZE=y
+CONFIG_FEATURE_VI_ASK_TERMINAL=y
+CONFIG_FEATURE_VI_UNDO=y
+CONFIG_FEATURE_VI_UNDO_QUEUE=y
+CONFIG_FEATURE_VI_UNDO_QUEUE_MAX=256
+CONFIG_FEATURE_ALLOW_EXEC=y
+
+# ---- archiver. GNU tar needs an MMU, so this is the only tar available.
+CONFIG_TAR=y
+CONFIG_FEATURE_TAR_CREATE=y
+CONFIG_FEATURE_TAR_AUTODETECT=y
+CONFIG_FEATURE_TAR_FROM=y
+CONFIG_FEATURE_TAR_OLDGNU_COMPATIBILITY=y
+CONFIG_FEATURE_TAR_OLDSUN_COMPATIBILITY=y
+CONFIG_FEATURE_TAR_GNU_EXTENSIONS=y
+CONFIG_FEATURE_TAR_LONG_OPTIONS=y
+CONFIG_FEATURE_TAR_TO_COMMAND=y
+CONFIG_FEATURE_TAR_UNAME_GNAME=y
+CONFIG_FEATURE_TAR_NOPRESERVE_TIME=y
+CONFIG_FEATURE_TAR_SELINUX=n
+CONFIG_FEATURE_SEAMLESS_GZ=y
+CONFIG_FEATURE_SEAMLESS_BZ2=y
+CONFIG_FEATURE_SEAMLESS_Z=y
+CONFIG_GUNZIP=y
+CONFIG_BUNZIP2=y
+# The gzip compressor lives here rather than as GNU gzip, which measured at
+# 1,003,520 bytes in one allocation -- order 8, unservable on this machine. It
+# is nearly all .bss: GNU gzip keeps its window and I/O buffers as static
+# arrays, so there is no configure switch that shrinks it.
+CONFIG_GZIP=y
+CONFIG_FEATURE_GZIP_LONG_OPTIONS=y
+CONFIG_GZIP_FAST=0
+CONFIG_FEATURE_GZIP_LEVELS=y
+CONFIG_FEATURE_GZIP_DECOMPRESS=y
+
+# ---- process view. procps-ng needs an MMU.
+CONFIG_TOP=y
+CONFIG_FEATURE_TOP_INTERACTIVE=y
+CONFIG_FEATURE_TOP_CPU_USAGE_PERCENTAGE=y
+CONFIG_FEATURE_TOP_DECIMALS=y
+CONFIG_FEATURE_TOP_CPU_GLOBAL_PERCENTS=y
+CONFIG_FEATURE_TOPMEM=y
+CONFIG_FEATURE_SHOW_THREADS=y
+CONFIG_PSTREE=y
+CONFIG_FUSER=y
+CONFIG_IOSTAT=y
+CONFIG_MPSTAT=y
+CONFIG_PMAP=y
+CONFIG_POWERTOP=n
+CONFIG_WATCH=y
+CONFIG_TIMEOUT=y
+CONFIG_NOHUP=y
+CONFIG_NICE=y
+CONFIG_RENICE=y
+CONFIG_TIME=y
+CONFIG_CHRT=y
+CONFIG_TASKSET=y
+
+# ---- patcher. GNU patch needs an MMU.
+CONFIG_PATCH=y
+
+# ---- the coreutils gap. GNU coreutils needs an MMU, so everything the main
+# busybox dropped from that family lands here.
+CONFIG_DU=y
+CONFIG_FEATURE_DU_DEFAULT_BLOCKSIZE_1K=y
+CONFIG_STAT=y
+CONFIG_FEATURE_STAT_FORMAT=y
+CONFIG_FEATURE_STAT_FILESYSTEM=y
+CONFIG_EXPR=y
+CONFIG_FEATURE_EXPR_MATH_SUPPORT_64=y
+CONFIG_UPTIME=y
+CONFIG_FEATURE_UPTIME_UTMP_SUPPORT=n
+CONFIG_MKTEMP=y
+CONFIG_INSTALL=y
+CONFIG_FEATURE_INSTALL_LONG_OPTIONS=y
+CONFIG_TRUNCATE=y
+CONFIG_REALPATH=y
+CONFIG_TAC=y
+CONFIG_SPLIT=y
+CONFIG_FEATURE_SPLIT_FANCY=y
+CONFIG_COMM=y
+CONFIG_OD=y
+CONFIG_HEXDUMP=y
+CONFIG_FEATURE_HEXDUMP_REVERSE=y
+CONFIG_HD=y
+CONFIG_STRINGS=y
+CONFIG_EXPAND=y
+CONFIG_UNEXPAND=y
+CONFIG_FEATURE_EXPAND_LONG_OPTIONS=y
+CONFIG_FEATURE_UNEXPAND_LONG_OPTIONS=y
+CONFIG_PRINTENV=y
+CONFIG_SHUF=y
+CONFIG_FACTOR=y
+CONFIG_SUM=y
+CONFIG_CKSUM=y
+CONFIG_CRC32=y
+CONFIG_UUDECODE=y
+CONFIG_UUENCODE=y
+CONFIG_BASE32=y
+CONFIG_BASE64=y
+CONFIG_MORE=y
+CONFIG_LSOF=y
+CONFIG_FLOCK=y
+CONFIG_SETSID=y
+CONFIG_UNSHARE=n
+CONFIG_NSENTER=n
+CONFIG_LINK=y
+CONFIG_UNLINK=y
+CONFIG_MKFIFO=y
+CONFIG_NPROC=y
+CONFIG_ASCII=y
+CONFIG_TREE=y

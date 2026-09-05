@@ -1,0 +1,190 @@
+/*
+ * ESP32-P4 hypervisor guest - PHASE 6
+ *
+ * Phase 5 with two things moved and nothing added.
+ *
+ * 1. The rootfs is no longer copied into PSRAM. The monitor leaves the "rootfs"
+ *    partition esp_partition_mmap()'d in the flash cache window and patches the
+ *    reg below to wherever the mapping landed, so the address here is a
+ *    PLACEHOLDER -- 0x49D00000 / 0x00200000, the old PSRAM window, chosen
+ *    because that exact big-endian pair appears once in the blob and is
+ *    therefore safe to find by pattern. Change it and patch_dtb_window() in
+ *    main.c stops matching, loudly.
+ *
+ *    That gives the guest 2 MB of RAM back, removes the cap that the window
+ *    used to put on image size, and makes bFLT program text execute in place
+ *    out of flash instead of out of PSRAM. It works because PMP entry 6 covers
+ *    0x40000000-0x44000000 with R+X and PMP permissions apply to U-mode.
+ *
+ *    There can be more than one of these. A physmap window is rounded down to
+ *    a power of two (physmap-core.c:521), so a single filesystem cannot grow
+ *    past 8 MB on a 16 MB chip -- but nothing stops the blob carrying several
+ *    rom@ nodes, and guest_windows[] in main.c is a list for that reason. A
+ *    three-window layout (rootfs 4 MB + tools 8 MB + extra 1 MB = 13 MB) was
+ *    built and booted, to carry a native ld; ld turned out not to run on this
+ *    board at all, and what replaced it fits in 8 MB with room to spare, so
+ *    the extra nodes came back out.
+ *
+ *    If you add one: give it its OWN placeholder reg pair, distinct from every
+ *    other, because patch_dtb_window() finds each node by searching those
+ *    eight bytes and a duplicate would patch the first node twice.
+ *
+ * 2. memory{} grew from 29 MB to 31 MB, because the 2 MB the romfs window used
+ *    to hold is no longer reserved for anything.
+ *
+ * Memory map inside the single PMP grant over 0x48000000-0x4A000000:
+ *
+ *   0x48000000  31 MB   memory{}         Linux
+ *   0x49F00000   1 MB   -                DTB
+ *
+ * The console is the serial port. A MIPI-DSI panel terminal was built here and
+ * then removed: the monitor rendered the guest's 16550 stream into a
+ * framebuffer that lived in the freed 2 MB window. It worked, but it is gone,
+ * and the window went to the guest instead. Input now comes from a USB keyboard
+ * (decoded on core 0, pushed into the same 16550 receive ring) or from the
+ * serial port; output goes to the wire.
+ */
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "espressif,esp32p4";
+	model = "ESP32-P4 hypervisor guest (phase 6)";
+
+	chosen {
+		/*
+		 * earlycon is the whole console.
+		 *
+		 * console=ttyS0 used to hand over to serial8250 once it probed.
+		 * There is no reason to any more: the monitor renders the same
+		 * 16550 stream onto the panel, so the handover only added a
+		 * driver, an interrupt path and a PLIC source between the guest
+		 * and a display that was already showing the earlycon output.
+		 * Dropping it also drops the TX-interrupt corner of the 16550
+		 * emulation (IER.ETBEI asserting the line continuously) from
+		 * the hot path.
+		 *
+		 * stdout-path still names uart0, which is what gives the shell
+		 * a controlling terminal to be started on.
+		 */
+		bootargs = "earlycon=uart8250,mmio,0x10000000 console=ttyS0 root=mtd0 rootfstype=romfs ro";
+		stdout-path = &uart0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <16000000>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "riscv";
+			reg = <0>;
+			status = "okay";
+
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c",
+					       "zicsr", "zifencei";
+			riscv,isa = "rv32imac";
+			clock-frequency = <360000000>;
+
+			cpu0_intc: interrupt-controller {
+				#interrupt-cells = <1>;
+				compatible = "riscv,cpu-intc";
+				interrupt-controller;
+			};
+		};
+	};
+
+	memory@48000000 {
+		device_type = "memory";
+	/*
+		 * 31 MB, up from 29. The romfs used to occupy a 2 MB window at
+		 * 0x49D00000 that had to stay outside this node; it is executed
+		 * in place out of flash now, so that window is the guest's. Only
+		 * the DTB at 0x49F00000 is still carved out of the 32 MB grant.
+		 */
+		reg = <0x48000000 0x01F00000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0", "riscv,clint0";
+			reg = <0x02000000 0x00010000>;
+			interrupts-extended = <&cpu0_intc 3>,
+					      <&cpu0_intc 7>;
+		};
+
+		plic: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x00400000>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <0>;
+
+			/*
+			 * riscv,ndev = highest interrupt source number.
+			 * Keep it small — it sizes the driver's tables and
+			 * bounds how much shadow state you must maintain.
+			 */
+			riscv,ndev = <31>;
+
+			/* one context: hart 0, M-mode external (bit 11) */
+			interrupts-extended = <&cpu0_intc 11>;
+		};
+
+
+		/*
+		 * physmap-core.c binds "mtd-rom" and requires bank-width. On a
+		 * NOMMU kernel its ioremap is the identity, so reads land
+		 * straight on the PSRAM window the monitor filled.
+		 */
+		/*
+		 * PLACEHOLDER reg -- patched at boot by patch_dtb_window(),
+		 * which is given the pair to search for. See the header
+		 * comment; do not "fix" these numbers.
+		 */
+		/*
+		 * ORDER MATTERS if you ever add a second one. of_platform_
+		 * populate walks the tree in source order, so these probe as
+		 * mtdblock0, 1, ... in the order written here -- and the kernel
+		 * command line above says root=mtd0. /proc/mtd on the board is
+		 * the authority.
+		 */
+		rootfs: rom@49d00000 {
+			compatible = "mtd-rom";
+			reg = <0x49D00000 0x00200000>;
+			bank-width = <4>;
+			device-width = <1>;
+			linux,mtd-name = "rootfs";
+		};
+
+		uart0: serial@10000000 {
+			compatible = "ns16550a";
+			reg = <0x10000000 0x100>;
+
+			/* one byte between registers — simplest to emulate */
+			reg-shift = <0>;
+			reg-io-width = <1>;
+			/*
+			 * Baud is fiction: your monitor forwards bytes to the
+			 * real UART0, which the ROM already set to 115200.
+			 * This value only feeds the divisor Linux computes and
+			 * then writes to registers you ignore.
+			 */
+			clock-frequency = <3686400>;
+			current-speed = <115200>;
+
+			interrupt-parent = <&plic>;
+			interrupts = <10>;
+
+			status = "okay";
+		};
+	};
+};

@@ -18,20 +18,30 @@
 /dts-v1/;
 
 / {
-	#address-cells = <1>;
+	#address-cells = <1>; 
 	#size-cells = <1>;
 	compatible = "espressif,esp32p4";
 	model = "ESP32-P4 hypervisor guest (phase 1)";
 
 	chosen {
 		/*
-		 * earlycon=uart8250,mmio,ADDR
+		 * earlycon=uart8250,mmio,ADDR,BAUD
 		 *   mmio  = 8-bit register spacing (matches reg-shift = 0)
 		 *   ADDR  = the fake 16550 your monitor emulates
+		 *   BAUD  = must be present, and must match the kernel's built-in
+		 *           CONFIG_CMDLINE ("...,0x10000000,115200n8"), or the two
+		 *           take different paths through early_serial8250_setup:
+		 *           with a baud it calls init_port() and writes LCR/IER/
+		 *           FCR/MCR, without one it only masks IER. The monitor
+		 *           must emulate whichever actually runs.
 		 *
-		 * No console= yet: there is no tty driver in this phase.
+		 * No clock is given after the baud, so port->uartclk stays 0 and
+		 * the DLAB block is skipped — no DLL/DLM writes to emulate.
+		 *
+		 * No console= yet: there is no tty driver in this phase, so
+		 * keep_bootcon holds earlycon open once handoff is attempted.
 		 */
-		bootargs = "earlycon=uart8250,mmio,0x10000000 keep_bootcon";
+		bootargs = "earlycon=uart8250,mmio,0x10000000,115200n8 keep_bootcon";
 	};
 
 	cpus {
@@ -70,12 +80,19 @@
 	};
 
 	/*
-	 * MUST match your PMP grant exactly — same base, same size.
-	 * Mismatch here shows up as an access fault that looks like a
-	 * hypervisor bug but is really Linux allocating outside its window.
+	 * MUST NOT exceed the PMP grant. Declaring more than the monitor granted
+	 * shows up as an access fault that looks like a hypervisor bug but is
+	 * really Linux allocating outside its window. Declaring less is fine and
+	 * is how the device windows above are kept out of the allocator.
 	 */
 	memory@48000000 {
 		device_type = "memory";
-		reg = <0x48000000 0x01000000>;   /* 16 MB */
+		/*
+		 * 31 MB of the 32 MB PSRAM window. The PMP grant covers the full
+		 * 32 MB (0x48000000-0x4A000000); the top 1 MB is deliberately left
+		 * out of this node so Linux will not allocate over the DTB at
+		 * 0x49F00000 or the device windows placed above it.
+		 */
+		reg = <0x48000000 0x01F00000>;
 	};
 };
