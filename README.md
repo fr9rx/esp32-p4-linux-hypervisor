@@ -97,7 +97,27 @@ Interactive, with a framed TUI:
 python tools\hypmon.py
 ```
 
-Login is `root` / `esp32p4`. Boot to login takes about 25 s.
+Login is `root` / `esp32p4`. Boot to login takes **about 2.4 s**, measured
+from the DTR/RTS reset:
+
+```
+reset -> ESP-IDF app              1.02 s
+ESP-IDF app -> kernel start       0.67 s
+kernel start -> root mounted      0.19 s
+root mounted -> init exec'd       0.00 s
+init exec'd -> login prompt       0.51 s
+                                  ------
+                                  2.36 s   (min 2.33, max 2.38 over 3 runs)
+```
+
+Measure it yourself with `python tools/boottime.py COM17 3` -- it times from
+the reset rather than from kernel timestamps, which only start counting once
+the kernel is already running and so hide the whole pre-Linux half.
+
+Note that **nearly half the time is spent before Linux starts**: 1.02 s of ROM
+and ESP-IDF init, then 0.67 s of hypervisor setup before the guest prints its
+first line. The guest itself is quick -- 0.19 s from kernel start to a mounted
+root, because romfs on memory-mapped flash needs no driver bring-up.
 
 ---
 
@@ -123,7 +143,7 @@ test.
 
 Working and verified on hardware:
 
-* Linux 6.8-rc1 boots to a shell, ~25 s, 29 MB of RAM.
+* Linux 6.8-rc1 boots to a shell in ~2.4 s, 29 MB of RAM.
 * romfs root executed in place out of flash, so program text costs no RAM.
 * Console over the emulated 16550, full-screen apps included (nano, less,
   ncurses). About 80 kB/s, roughly 1.56 traps per character.
