@@ -1,7 +1,13 @@
-idf_component_register(SRCS "main.c" "hyp_vectors.S" "hyp_kbd.c"
+idf_component_register(SRCS "main.c" "hyp_vectors.S"
+                            "hyp_decode.c" "hyp_csr.c"
+                            "hyp_clint.c" "hyp_plic.c" "hyp_uart.c"
+                            "hyp_intr.c" "hyp_mmio.c"
+                            "hyp_trace.c" "hyp_core.c" "hyp_boot.c"
+                            "hyp_sd.c" "hyp_virtio_blk.c"
                     REQUIRES esp_psram esp_partition esp_mm
                              esp_hal_systimer esp_hal_uart
-                             esp_hw_support cherryusb
+                             esp_hw_support
+                             esp_driver_sdmmc sdmmc
                     INCLUDE_DIRS "."
                     LDFRAGMENTS "linker.lf")
 

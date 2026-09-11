@@ -1,4 +1,4 @@
-# esp32-p4-linux-hypervisor
+# esp32-p4-emulator
 
 A hand-written **M-mode hypervisor** for the ESP32-P4 that boots **NOMMU
 Linux 6.8-rc1 as a U-mode guest** by trap-and-emulate.
@@ -30,9 +30,10 @@ native rv32 toolchain it can build and run its own programs with.
 
 | path | what |
 |---|---|
-| `main/main.c` | the monitor: traps, device emulation, PMP, guest load |
+| `main/hyp.h` | the contract between the monitor's modules — **read this first** |
+| `main/main.c` | core 0's service loop, and nothing else |
+| `main/hyp_*.c` | the monitor, split by topic — see "The monitor's source layout" |
 | `main/hyp_vectors.S` | trap entry/exit |
-| `main/hyp_kbd.c` | USB keyboard, decoded on core 0 into the 16550 RX ring |
 | `dts/p4-phase6.dts` | the guest's device tree (the live one) |
 | `partitions.csv` | flash layout — read the comments before changing it |
 | `buildroot/board-esp32p4/` | everything that builds the guest userland |
@@ -97,18 +98,21 @@ Interactive, with a framed TUI:
 python tools\hypmon.py
 ```
 
-Login is `root` / `esp32p4`. Boot to login takes **about 2.4 s**, measured
+Login is `root` / `esp32p4`. Boot to login takes **about 2.5 s**, measured
 from the DTR/RTS reset:
 
 ```
-reset -> ESP-IDF app              1.02 s
-ESP-IDF app -> kernel start       0.67 s
-kernel start -> root mounted      0.19 s
+reset -> ESP-IDF app              1.03 s
+ESP-IDF app -> kernel start       0.71 s
+kernel start -> root mounted      0.26 s
 root mounted -> init exec'd       0.00 s
 init exec'd -> login prompt       0.51 s
                                   ------
-                                  2.36 s   (min 2.33, max 2.38 over 3 runs)
+                                  2.52 s   (min 2.50, max 2.53 over 2 runs)
 ```
+
+It was 2.36 s before the SD card was added; the extra ~160 ms is card
+initialisation on core 0 plus the guest's virtio-blk probe.
 
 Measure it yourself with `python tools/boottime.py COM17 3` -- it times from
 the reset rather than from kernel timestamps, which only start counting once
@@ -139,21 +143,97 @@ test.
 
 ---
 
+## Storage
+
+The microSD card is a **virtio-mmio block device** the guest drives itself, so
+`/dev/vda` is an ordinary Linux block device:
+
+```
+# mount -t ext2 /dev/vda1 /mnt
+# echo hello > /mnt/hello.txt && sync
+# cat /mnt/hello.txt        # still there after a power cycle
+hello
+```
+
+Root stays romfs-on-flash, executed in place, so program text still costs no
+RAM. The card is where writes go.
+
+**Why virtio.** The guest kernel already has `CONFIG_VIRTIO_MMIO=y` and
+`CONFIG_VIRTIO_BLK=y`, so the entire guest-side cost is a device-tree node --
+`virtio@10001000` in `dts/p4-phase6.dts`. No out-of-tree driver, no kernel
+patch, nothing to maintain. The device is emulated in `main/hyp_virtio_blk.c`
+and reports Version 1 (legacy), so the guest uses the single-`QueuePFN` ring.
+
+**Why the card is driven by ESP-IDF and not by Linux.** The native
+(non-hypervisor) line of this project tried Linux's own `dw_mmc` driver on this
+silicon and could not get a reliable filesystem out of it: raw block transfers
+worked at any size, but the scattered multi-block transfers a filesystem
+generates hung the controller reproducibly, and the watchdog then reset the
+board. ESP-IDF's driver drives the same hardware and works. Borrowing it is
+what a hypervisor is *for*.
+
+**How a request crosses the cores.** The guest and every MMIO trap are on core
+1, which has no FreeRTOS; ESP-IDF's SD driver blocks on semaphores and ISR
+dispatch and can only run on core 0. So a queue notify on core 1 records a
+kick, core 0's service task does the I/O and publishes the used ring, and core
+1 turns that into a guest interrupt on its next device poll. `hyp_virtio_blk.c`
+documents the handshake and the memory ordering it needs.
+
+The service task runs at priority 0 and yields rather than sleeping: at
+priority 0 it round-robins with the idle task, so the task watchdog still gets
+fed, while a yield-based loop responds in microseconds. `vTaskDelay(1)` would
+be 10 ms at `CONFIG_FREERTOS_HZ=100`, which would make every block request
+glacial.
+
+One caveat: the filesystem on the card was made by busybox `mkfs.ext2`, which
+does not set the clean flag, so every mount prints `mounting unchecked fs`.
+Harmless, and there is no `e2fsck` in the guest to silence it with.
+
+---
+
+## The monitor's source layout
+
+`main.c` was 2,300 lines. It is now 90 -- core 0's service loop -- and the rest
+is split by topic, with `main/hyp.h` carrying the contract between the modules
+and the map of which file does what:
+
+| file | what |
+|---|---|
+| `hyp_decode.c` | instruction fetch, RVC expansion, register access |
+| `hyp_csr.c` | shadow CSR bank, `csr`/`mret`/`wfi` emulation |
+| `hyp_clint.c` | emulated CLINT, the guest's timer |
+| `hyp_plic.c` | emulated PLIC |
+| `hyp_uart.c` | emulated 16550, the guest's console |
+| `hyp_intr.c` | shadow `mip`, interrupt injection, host device servicing |
+| `hyp_mmio.c` | device table and the load/store decoder |
+| `hyp_trace.c` | trap history, statistics, panic |
+| `hyp_core.c` | trap dispatch -- the entry point from `hyp_vectors.S` |
+| `hyp_boot.c` | guest loading, PMP, core-1 bring-up |
+| `hyp_sd.c` | the microSD card as raw sectors (core 0 only) |
+| `hyp_virtio_blk.c` | the virtio-mmio block device |
+
+A symbol earns a place in `hyp.h` only if more than one `.c` file uses it;
+everything else stays `static`. Adding the block device meant adding one row to
+`mmio_devices[]` -- the load/store decoder did not change, which is what that
+table is for.
+
+---
+
 ## State
 
 Working and verified on hardware:
 
-* Linux 6.8-rc1 boots to a shell in ~2.4 s, 29 MB of RAM.
+* Linux 6.8-rc1 boots to a shell in ~2.5 s, 29 MB of RAM.
 * romfs root executed in place out of flash, so program text costs no RAM.
 * Console over the emulated 16550, full-screen apps included (nano, less,
   ncurses). About 80 kB/s, roughly 1.56 traps per character.
-* USB keyboard input, decoded on core 0.
+* **Persistent writable storage on the microSD card**, as a virtio-mmio block
+  device. See "Storage" below.
 * On-board assembler, linker and packager.
 
 Known gaps, all in `docs/HANDOFF.md`:
 
 * `has_colors()` returns false in the guest and nothing explains it yet.
-* No persistent writable storage; `/home` is tmpfs.
 * Every emulated device costs traps. `docs/NATIVE-DRIVERS.md` is the plan for
   replacing them with real hardware, and the enabling fact is already
   established: **the guest can reach ESP32-P4 peripheral registers directly**.

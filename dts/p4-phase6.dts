@@ -186,5 +186,39 @@
 
 			status = "okay";
 		};
+
+		/*
+		 * The SD card, as a virtio block device.
+		 *
+		 * This is a node rather than a hardcoded window on purpose. The
+		 * guest's kernel already carries CONFIG_VIRTIO_MMIO=y and
+		 * CONFIG_VIRTIO_BLK=y, so describing the device here is the
+		 * whole guest-side cost: virtio_mmio probes it, reads the
+		 * capacity out of config space and registers /dev/vda. No
+		 * out-of-tree driver, no kernel patch, nothing to maintain.
+		 *
+		 * The monitor emulates the registers in hyp_virtio_blk.c and
+		 * backs them with ESP-IDF's SD driver on core 0 -- which is the
+		 * point of doing storage this way at all: Linux's own dw_mmc
+		 * driver does not work reliably on this silicon, and ESP-IDF's
+		 * does.
+		 *
+		 * Legacy virtio (the monitor reports Version = 1), so the guest
+		 * uses the single-QueuePFN ring layout.
+		 *
+		 * interrupts = <11>: PLIC source 11, one above the UART's 10,
+		 * and it must match PLIC_VIRTIO_BLK_SOURCE in hyp.h. Nothing
+		 * checks that for you -- a mismatch shows up as a block device
+		 * that probes and then never completes a request.
+		 */
+		vblk: virtio@10001000 {
+			compatible = "virtio,mmio";
+			reg = <0x10001000 0x00001000>;
+
+			interrupt-parent = <&plic>;
+			interrupts = <11>;
+
+			status = "okay";
+		};
 	};
 };
